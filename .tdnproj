@@ -1,0 +1,25 @@
+{
+  "target-version": [
+    1,
+    17,
+    0
+  ],
+  "default-namespace": "toe",
+  "language-level": 3,
+  "datapack-output": "E:\\Trident\\Workspace\\tales_of_eternity\\out\\tales_of_eternity",
+  "resources-output": "E:\\Trident\\Workspace\\tales_of_eternity\\out\\tales_of_eternity-resources.zip",
+  "clear-datapack-output": false,
+  "clear-resources-output": false,
+  "export-comments": true,
+  "export-gamelog": true,
+  "strict-nbt": true,
+  "strict-text-components": true,
+  "anonymous-function-name": "_anonymous*",
+  "using-all-plugins": false,
+  "game-logger": {
+    "compact": false,
+    "timestamp-enabled": true,
+    "pos-enabled": true,
+    "line-number-enabled": false
+  }
+}

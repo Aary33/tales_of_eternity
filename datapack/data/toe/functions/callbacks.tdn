@@ -1,0 +1,86 @@
+@on compile
+@priority 9
+
+# define function global {
+#     define function globa_player_count_changed {
+#         @tag tick
+#         
+#         set $var_prePlayerCount->toe.var = 0
+#         
+#         if score $callback_playerCountChanged toe.callback matches 1..
+#         set $callback_playerCountChanged->toe.callback = 0
+#         
+#         as @a set $var_prePlayerCount->toe.var += 1
+#         
+#         unless score $var_prePlayerCount toe.var = $var_playerCount toe.var
+#         function trigger {
+#             set $var_playerCount->toe.var = $var_prePlayerCount->toe.var
+#             set $callback_playerCountChanged->toe.callback = 1
+#         }
+#         
+#         
+#     }
+# }
+# 
+# define function local {
+#     @tag tick
+#     
+#     as @a at @s
+#     function player_died {
+#         var callback_score = "toe.callback."+CALLBACK.PLAYER_DIED
+#         
+#         if score @s $callback_score matches 1
+#         set @s->$callback_score = 0
+#         
+#         if score @s toe.stat.death matches 1..
+#         function trigger {
+#             set @s->toe.stat.death = 0
+#             set @s->$callback_score = 1
+#         }
+#     }
+#     
+#     as @a at @s
+#     function player_jumped {
+#         var callback_score = "toe.callback."+CALLBACK.PLAYER_JUMPED
+#         
+#         if score @s $callback_score matches 1
+#         set @s->$callback_score = 0
+#         
+#         if score @s toe.stat.jump matches 1..
+#         function trigger {
+#             set @s->toe.stat.jump = 0
+#             set @s->$callback_score = 1
+#         }
+#     }
+#     
+#     as @a at @s
+#     function post_move_swap {
+#         var callback_score = "toe.callback."+CALLBACK.POST_MOVE_SWAP
+#         
+#         if score @s $callback_score matches 1
+#         set @s->$callback_score = 0
+#         
+#         for (var i = 0; i < MAX_SLOTS; i++) {
+#             if predicate ${pre_is_slot_selected[i]}
+#             unless score @s toe.stat.slot matches $i 
+#             function ${new resource("trigger_slot_" + i)} {
+#                 set @s->toe.stat.slot = $i
+#                 set @s->$callback_score = 1
+#             }
+#         }
+#     }
+#     
+#     as @a at @s
+#     function update_sneak_time {
+#         var callback_score = "toe.callback."+CALLBACK.UPDATE_SNEAK_TIME
+#         
+#         if score @s $callback_score matches 1
+#         set @s->$callback_score = 0
+#         
+#         if score @s toe.stat.sneak.t matches 1..
+#         function trigger {
+#             set @s->toe.stat.sneak.t = 0
+#             set @s->$callback_score = 1
+#         }
+#     }
+# }

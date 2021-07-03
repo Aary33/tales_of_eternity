@@ -1,0 +1,53 @@
+@on compile
+@priority 40.0
+
+
+define class Callback {
+    public static final var ENUM_PLAYER_COUNT_CHANGED = 0
+    
+    public static var PTR_PLAYER_COUNT_CHANGED = pointer<#playerCountChanged->toe.callback> 
+    public static var PTR_TMP = pointer<#tmpPlayerCountChanged->toe.callback> 
+    
+    private static var callbacks : list = []
+    
+    public static addCallback(callback : int, f : function, data) {
+        if (callback == ENUM_PLAYER_COUNT_CHANGED) {
+            var args = { Callback: callback , Function: f , Data : data}
+            eval callbacks.add(args)
+        }
+    }
+    
+    private static playerCountChanged() {
+        set ${Game.PTR_TMP} = 0
+        
+        if score ${PTR_PLAYER_COUNT_CHANGED.target} ${PTR_PLAYER_COUNT_CHANGED.member} matches 1..
+        set ${PTR_PLAYER_COUNT_CHANGED} = 0
+        
+        as @a set ${Game.PTR_TMP} += 1
+        
+        unless score ${Game.PTR_TMP.target} ${Game.PTR_TMP.member} = ${Game.PTR_PLAYER_COUNT.target} ${Game.PTR_PLAYER_COUNT.member}
+        function trigger {
+            set ${Game.PTR_PLAYER_COUNT} = ${Game.PTR_TMP}
+            set ${PTR_PLAYER_COUNT_CHANGED} = 1
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_COUNT_CHANGED) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+        }
+    }
+    
+    public static run() {
+        eval playerCountChanged()
+    }
+    
+}
+
+# var sayHi = function() {
+#     say hi
+#     log info "hi"
+# }
+# var callback = Callback.addCallback(Callback.ENUM_PLAYER_COUNT_CHANGED, function() {
+#     log info "hi"
+# })

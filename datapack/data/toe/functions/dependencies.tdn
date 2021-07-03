@@ -1,0 +1,101 @@
+@on compile
+@priority 40.0
+
+# Resources
+#
+#
+
+# Predicates
+
+global var MAX_SLOTS = 9
+global var pre_is_slot_selected = []
+for (var i = 0; i < MAX_SLOTS; i++) {
+    eval pre_is_slot_selected.add(new resource("toe:entities/player/is_slot_selected_" + i))
+}
+
+# Particle Enums
+global var WING_FRAMES = {}
+eval WING_FRAMES.ANIM_01 = 0
+eval WING_FRAMES.ANIM_02 = 1
+eval WING_FRAMES.ANIM_03 = 2
+eval WING_FRAMES.ANIM_04 = 3
+eval WING_FRAMES.ACTIVE = 4
+eval WING_FRAMES.DEACTIVE = 0
+eval WING_FRAMES.SNEAK = 0
+eval WING_FRAMES.ASCENT = 0
+eval WING_FRAMES.GLIDE = 2
+eval WING_FRAMES.FALL = 0
+
+# Particles
+global var WINGS = {
+    dragon_lord: [
+        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_01>,
+        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_02>,
+        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_03>,
+        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_04>,
+        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_05>
+    ]
+}
+
+
+
+# Enumerations
+#
+#
+
+# Moves Enums
+global var MOVES = {}
+eval MOVES.DRAGON_FLIGHT = 0
+eval MOVES.DRAGON_BREATH = 1
+
+# Powers Enums
+global var POWERS = {}
+eval POWERS.DRAGON_LORD = 0
+
+# Callback Enums
+global var CALLBACK = {}
+eval CALLBACK.PLAYER_CHANGED_POWERS = 0
+eval CALLBACK.PLAYER_DIED = 1
+eval CALLBACK.PLAYER_JUMPED = 2
+eval CALLBACK.POST_MOVE_SWAP = 3
+eval CALLBACK.UPDATE_SNEAK_TIME = 4
+
+# Timer Enums
+global var TIMER = {}
+eval TIMER.WING_FRAME = 0
+
+
+# Objectives
+#
+#
+
+define objective toe.age dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Entity Age"}]
+define objective toe.spirit dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Spirit"}]
+define objective toe.var dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Variables", "color": "green"}]
+define objective toe.bar dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Bossbar ID"}]
+
+define objective toe.stat.death deathCount ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player deathCount Stat", "color": "white"}]
+define objective toe.stat.jump minecraft.custom:minecraft.jump ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player jump Stat", "color": "white"}]
+define objective toe.stat.slot dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player selectedSlot Stat", "color": "white"}]
+define objective toe.stat.sneak.t minecraft.custom:minecraft.sneak_time ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Trigger Stat", "color": "white"}]
+define objective toe.stat.sneak.p dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Press Stat", "color": "white"}]
+define objective toe.stat.fallD dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player fallDistance Stat", "color": "white"}]
+define objective toe.stat.ground dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player OnGround Stat", "color": "white"}]
+
+# Callbacks
+global var callback_playerCountChanged = entity<#playerCountChanged>
+define objective toe.callback dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Callbacks", "color": "green"}]
+define objective ${"toe.callback." + CALLBACK.PLAYER_CHANGED_POWERS} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Changed Team Callback", "color": "white"}]
+define objective ${"toe.callback." + CALLBACK.PLAYER_DIED} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Died Callback", "color": "white"}]
+define objective ${"toe.callback." + CALLBACK.PLAYER_JUMPED} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Jumped Callback", "color": "white"}]
+define objective ${"toe.callback." + CALLBACK.POST_MOVE_SWAP} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Post Move Swap Callback", "color": "white"}]
+define objective ${"toe.callback." + CALLBACK.UPDATE_SNEAK_TIME} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Update Sneak Time Callback", "color": "white"}]
+
+# Timers
+define objective toe.timer dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Timers", "color": "green"}]
+define objective ${"toe.timer." + TIMER.WING_FRAME} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Wing Animation Timer", "color": "white"}]
+
+# Game Variables
+#
+# 
+

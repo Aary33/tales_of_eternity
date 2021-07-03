@@ -1,0 +1,21 @@
+{
+  "input-resources": "(automatically selected by Trident-UI)",
+  "output": {
+    "directories": {
+      "data-pack": "C:\\Users\\a1zepeda\\AppData\\Roaming\\.minecraft\\saves\\tales_of_eternity\\datapacks\\tales_of_eternity.zip",
+      "resource-pack": "C:\\Users\\a1zepeda\\AppData\\Roaming\\.minecraft\\resourcepacks\\tales_of_eternity-resources.zip"
+    },
+    "clean-directories": {
+      "data-pack": true,
+      "resource-pack": true
+    },
+    "export-comments": true,
+    "export-gamelog": true
+  },
+  "trident-ui": {
+    "actions": {
+      "pre": [],
+      "post": []
+    }
+  }
+}

@@ -1,0 +1,17 @@
+@on compile
+
+for (var i = 0; i < MAX_SLOTS; i++) {
+    eval File.out.writeData(
+        "data/toe/predicates/entities/player/is_slot_selected_" + i + ".json" ,
+        JSON.stringify(
+            {
+                "condition": "minecraft:entity_properties",
+                "entity": "this",
+                "predicate": {
+                    "nbt": "{SelectedItemSlot:" + i + "}"
+                }
+            },
+            true
+        )
+    )
+}

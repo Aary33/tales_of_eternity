@@ -1,0 +1,182 @@
+@on compile
+@priority 8
+
+
+# global var BOSSBAR_STORAGE = new resource("toe:bossbar")
+# lobal var BOSSBAR_SPIRIT = {
+#    id: "spirit",
+#    Namespace: "toe",
+#    FullID: "toe:spirit",
+#    Seperator: ".",
+#    DisplayName: new text_component({
+#        "text" : "Spirit",
+#        "color" : "red",
+#        "bold" : true
+#    }),
+#    Color: "red",
+#    Style: "notched_10",
+#    DefaultMax: 1000,
+#    AllocatedBossBars: 100
+# 
+
+# efine function remove_all_bars {
+#    global var f_bossbar_remove_all_bars = resource</>
+#    
+#    
+#    for (var i = 0; i < BOSSBAR_SPIRIT.AllocatedBossBars; i ++) {
+#        # var bar_id = new resource(BOSSBAR_NAMESPACE + BOSSBAR_PREFIX + ((string) i ))
+#        var bar_id = new resource(
+#            BOSSBAR_SPIRIT.FullID +
+#            BOSSBAR_SPIRIT.Seperator +
+#            i
+#        )
+#        
+#        bossbar remove $bar_id
+#        
+#    }
+# 
+# efine function remove_unused_bars {
+#    global var f_bossbar_remove_unused_bars = resource</>
+#    
+#    for (var i = 0; i < BOSSBAR_SPIRIT.AllocatedBossBars; i ++) {
+#        # var bar_id = new resource(BOSSBAR_NAMESPACE + BOSSBAR_PREFIX + ((string) i ))
+#                
+#        unless score $var_bossbarSpiritCount toe.var matches $i..
+#        function ${new resource("remove_bar_" + i)} {
+#            var bar_id = new resource(
+#                BOSSBAR_SPIRIT.FullID +
+#                BOSSBAR_SPIRIT.Seperator +
+#                i
+#            )
+#            bossbar remove $bar_id
+#            
+#        }
+#        
+#    }
+# 
+
+# efine function create_used_bars {
+#    global var f_bossbar_create_used_bars = resource</>
+#    
+#    for (var i = 0; i < BOSSBAR_SPIRIT.AllocatedBossBars; i ++) {
+#        # var bar_id = new resource(BOSSBAR_NAMESPACE + BOSSBAR_PREFIX + ((string) i ))
+#                
+#        if score $var_bossbarSpiritCount toe.var matches $i..
+#        as @a[scores={toe.bar=$i}]
+#        function ${new resource("create_bossbar_" + i)} {
+#            var bar_id = new resource(
+#                BOSSBAR_SPIRIT.FullID +
+#                BOSSBAR_SPIRIT.Seperator +
+#                i
+#            )
+#            bossbar add $bar_id ${BOSSBAR_SPIRIT.DisplayName}
+#            /${"bossbar set " + bar_id + " color " + BOSSBAR_SPIRIT.Color}
+#            /${"bossbar set " + bar_id + " style " + BOSSBAR_SPIRIT.Style}
+#            bossbar set $bar_id visible true
+#            bossbar set $bar_id max ${BOSSBAR_SPIRIT.DefaultMax}
+#            bossbar set $bar_id players @s
+#            
+#        }
+#        
+#    }
+# 
+
+# efine function create_all_bars {
+#    global var f_bossbar_create_all_bars = resource</>
+#    
+#    for (var i = 0; i < BOSSBAR_SPIRIT.AllocatedBossBars; i ++) {
+#        function ${new resource("create_bossbar_" + i)} {
+#            var bar_id = new resource(
+#                BOSSBAR_SPIRIT.FullID +
+#                BOSSBAR_SPIRIT.Seperator +
+#                i
+#            )
+#            bossbar add $bar_id ${BOSSBAR_SPIRIT.DisplayName}
+#            /${"bossbar set " + bar_id + " color " + BOSSBAR_SPIRIT.Color}
+#            /${"bossbar set " + bar_id + " style " + BOSSBAR_SPIRIT.Style}
+#            bossbar set $bar_id visible false
+#            bossbar set $bar_id max ${BOSSBAR_SPIRIT.DefaultMax}
+#            
+#        }
+#        
+#    }
+# 
+# efine function refresh_assignments {
+#    global var f_bossbar_refresh_assignments = resource</>
+#    
+#    set $var_bossbarSpiritCount->toe.var = 0
+#    set @a->toe.bar = -1
+#    
+#    # function empty_bar_data {
+#    #     if data storage $BOSSBAR_STORAGE Bossbars
+#    #     data remove storage $BOSSBAR_STORAGE Bossbars
+#    #     
+#    #     data merge storage $BOSSBAR_STORAGE {
+#    #         Bossbars:[],
+#    #         CurrentBossbar: 0
+#    #     }
+#    # }
+#    
+#    function reset_bar_ids {
+#        var selected_player_tag = "toe.bar"
+#        tag @a[limit=1,sort=arbitrary,scores={toe.bar=-1}] add $selected_player_tag
+#        
+#        set @a[tag=$selected_player_tag]->toe.bar = $var_bossbarSpiritCount->toe.var
+#        # store result storage $BOSSBAR_STORAGE CurrentBossbar int 1 scoreboard players get @s toe.bar
+#        # data modify storage $BOSSBAR_STORAGE Bossbars append from storage $BOSSBAR_STORAGE CurrentBossbar
+#        
+#        
+#        set $var_bossbarSpiritCount->toe.var += 1
+#        tag @a[tag=$selected_player_tag] remove $selected_player_tag
+#        unless score $var_bossbarSpiritCount toe.var = $var_playerCount toe.var
+#        function /
+#    }
+#    
+#    function $f_bossbar_remove_unused_bars
+#    function $f_bossbar_create_used_bars
+#     
+# 
+
+# efine function track {
+#    global var f_bossbar_track = resource</>
+#    
+#    function spirit {
+#        for (var i = 0; i < BOSSBAR_SPIRIT.AllocatedBossBars; i ++) {
+#            # var bar_id = new resource(BOSSBAR_NAMESPACE + BOSSBAR_PREFIX + ((string) i ))
+#            var bar_id = new resource(
+#                BOSSBAR_SPIRIT.FullID +
+#                BOSSBAR_SPIRIT.Seperator +
+#                i
+#            )
+#            
+#            if score $var_bossbarSpiritCount toe.var matches $i..
+#            as @a[scores={toe.bar=$i}]
+#            store result bossbar $bar_id value scoreboard players get @s toe.spirit
+#        }
+#    }
+#    
+# 
+
+# efine function init {
+#    @tag load
+#    
+#    function $f_bossbar_remove_all_bars
+#    function $f_bossbar_create_all_bars
+# 
+
+# efine function tick {
+#    @tag tick
+#    
+#    if score $callback_playerCountChanged toe.callback matches 1
+#    function $f_bossbar_refresh_assignments
+#    
+#    function $f_bossbar_track
+#    
+# 
+
+# efine function uninstall {
+#    global var f_uninstall_bossbars = resource</>
+#    
+#    function $f_bossbar_remove_all_bars
+# 
+

@@ -1,0 +1,115 @@
+@on compile
+@priority 100.0
+
+define class Color {
+    public static final var BLUE : string = "blue"
+    public static final var GREEN : string = "green"
+    public static final var PINK : string = "pink"
+    public static final var PURPLE : string = "purple"
+    public static final var RED : string = "red"
+    public static final var WHITE : string = "white"
+    public static final var YELLOW : string = "yellow"
+}
+define class Style {
+    public static final var NOTCHED_6 : string = "notched_6"
+    public static final var NOTCHED_10 : string = "notched_10"
+    public static final var NOTCHED_12 : string = "notched_12"
+    public static final var NOTCHED_20 : string = "notched_20"
+    public static final var PROGRESS : string = "progress"
+}
+
+define class Game {
+    public static var TITLE = "Tales of Eternity"
+    public static var VERSION = "0.1"
+    public static var NAMESPACE = "toe"
+    
+    
+    public static var PTR_TMP = pointer<#tmp->toe.var> 
+    public static var PTR_PLAYER_COUNT = pointer<#playerCount->toe.var> 
+    
+    public static printLoadSuccess() {
+        var message = new text_component(
+            [
+                "",
+                {
+                    "text":"> ",
+                    "color":"gray"
+                },
+                {
+                    "text":"[",
+                    "color":"white"
+                },
+                {
+                    "text": Game.TITLE,
+                    "color":"yellow"
+                },
+                {
+                    "text":"]",
+                    "color":"white"
+                },
+                {
+                    "text":"[",
+                    "color":"white"
+                },
+                {
+                    "text": Game.VERSION,
+                    "color":"yellow"
+                },
+                {
+                    "text":"]",
+                    "color":"white"
+                },
+                {
+                    "text":" project datapack loaded.",
+                    "color":"gray",
+                    "italic":true
+                }
+            ]
+        )
+        tellraw @a $message
+    }
+    
+    public static printUninstallSuccess() {
+        var message = new text_component(
+            [
+                "",
+                {
+                    "text":"> ",
+                    "color":"gray"
+                },
+                {
+                    "text":"[",
+                    "color":"white"
+                },
+                {
+                    "text": TITLE,
+                    "color":"red"
+                },
+                {
+                    "text":"]",
+                    "color":"white"
+                },
+                {
+                    "text":"[",
+                    "color":"white"
+                },
+                {
+                    "text": VERSION,
+                    "color":"red"
+                },
+                {
+                    "text":"]",
+                    "color":"white"
+                },
+                {
+                    "text":" project datapack uninstalled.",
+                    "color":"red",
+                    "italic":true
+                }
+            ]
+        )
+        tellraw @a $message
+    }
+    
+    
+}

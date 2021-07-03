@@ -1,0 +1,75 @@
+@on compile
+@priority 0.0
+
+# TODO: Main
+# Change teams to tags
+# Switch variables to pointers
+
+var removeObjectives = function() {
+    var objectives = Reflection.getDefinedObjectives()
+    for(entry in objectives) {
+        var objective = entry.key
+        scoreboard objectives remove $objective
+        # log info entry.value
+        # log info entry.key
+    }
+}
+var addTeams = function() {
+    for (var i = 0; i < POWERS.length; i++ ) {
+        var power = POWERS[i]
+        var id = power.getTeamID()
+        team add $id ${power.getDisplayName()}
+        team modify $id prefix ${power.getTeamPrefix()}
+        team modify $id suffix ${power.getTeamSuffix()}
+        /${"team modify " + power.getTeamID() + " color " + power.getTeamColor()}
+        team modify $id collisionRule always
+        team modify $id friendlyFire true
+        team modify $id nametagVisibility always
+        team modify $id seeFriendlyInvisibles false
+    }
+}
+var removeTeams = function() {
+    for (var i = 0; i < POWERS.length; i++ ) {
+        var id = POWERS[i].getTeamID()
+        team remove $id
+    }
+}
+var setGamerules = function() {
+    # gamerule fallDamage false
+}
+var initializePointers = function() {
+    set ${Game.PTR_TMP} = 0
+    set ${Game.PTR_PLAYER_COUNT} = 0
+}
+
+define function second {
+    global var f_second = resource</>
+    schedule function / 1s replace
+}
+
+define function tick {
+    @tag tick
+    eval Callback.run()
+    eval BossbarFamily.track()
+}
+
+define function init {
+    @tag load
+    schedule function $f_second 1s replace
+    
+    # eval Game.addTeams()
+    eval setGamerules()
+    eval initializePointers()
+    
+    eval Game.printLoadSuccess()
+}
+
+define function uninstall {
+    eval removeTeams()
+    eval removeObjectives()
+    eval BossbarFamily.uninstall()
+    
+    eval Game.printUninstallSuccess()
+}
+
+

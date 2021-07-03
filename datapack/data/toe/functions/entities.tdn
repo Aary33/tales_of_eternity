@@ -1,0 +1,16 @@
+@on compile
+@priority 20.0
+
+
+define function player {
+    @tag tick
+    
+    as @a at @s function this {
+        set @s->toe.age += 1
+        
+        for (var i = 0; i < POWERS.length; i++ ) {
+            var power = POWERS[i]
+            eval power.run()
+        }
+    }
+}

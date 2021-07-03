@@ -1,0 +1,165 @@
+@on compile
+@priority 20.1
+
+
+# General Movement
+global var BASE_MOVEMENT_SPEED = 0.150 # Player's base speed
+
+# Water
+# global var MODIFIER_UUID = uuid<8-0-7-1-6>
+# global var MOMENTUM_STOP_DISTANCE = coordinates<^ ^ ^>.deriveMagnitude(0, Axis.X).deriveMagnitude(0, Axis.Y).deriveMagnitude(0.5, Axis.Z)
+
+global var bb_spirit = new BossbarFamily("spirit")
+eval bb_spirit.setDisplayName(
+    new text_component({
+        "text" : "Spirit",
+        "color" : Color.RED,
+        "bold" : true
+    })
+)
+eval bb_spirit.setColor(Color.RED)
+eval bb_spirit.setStyle(Style.NOTCHED_10)
+eval bb_spirit.setObjective("toe.spirit")
+
+# Move Indexes
+global var mve_dragon_flight = new Move("dragon_flight")
+eval mve_dragon_flight.setDisplayName(
+    new text_component({
+        "text" : "Dragon Lord",
+        "color" : Color.RED,
+        "bold" : false
+    })
+)
+eval mve_dragon_flight.setSpiritCost(20)
+eval mve_dragon_flight.addRunTagsByName(["air", "peak", "up"])
+eval mve_dragon_flight.setData(
+    {
+        XRotationTolerance: {
+            Min: -90.0,
+            Max: 5.0
+        },
+        LevitationAmplifier: 2,
+        JumpBoostAmplifier: [30]
+    }
+)
+
+global var MOVES = [
+    mve_dragon_flight
+]
+
+# global var MOVES_CONFIG = {
+#     dragon_flight: {
+#         id: "dragon_flight",
+#         DisplayName: "Dragon Flight",
+#         Tag: "mve.dragon_flight",
+#         SpiritRequirement: 20,
+#         Tags: [
+#             "mve.dragon_flight.air",
+#             "mve.dragon_flight.air.peak",
+#             "mve.dragon_flight.air.peak.up"
+#         ],
+#         TagEnums: {
+#             AIR: 0,
+#             AIR_PEAK: 1,
+#             AIR_PEAK_UP: 2
+#         },
+#         ExtraData: {
+#             XRotationTolerance: {
+#                 Min: -90.0,
+#                 Max: 5.0
+#             },
+#             LevitationAmplifier: 2,
+#             JumpBoostAmplifier: [30]
+#         }
+#     },
+#     dragon_breath: {
+#         id: "dragon_breath",
+#         DisplayName: "Dragon Breath",
+#         Tag: "mve.dragon_breath",
+#         SpiritRequirement: 40,
+#         Tags: [
+#         ],
+#         TagEnums: {
+#         },
+#         ExtraData: {
+#         }
+#     }
+# }
+
+
+# global var ITEMS = [
+#     new nbt({
+#         id: 0,
+#         CustomModelData: 1001000,
+#         Name: "amys_hammer",
+#         DisplayName: "Amy's Hammer",
+#         UserTag: "item.amys_hammer.user",
+#         EffectTag: "item.amys_hammer.effect",
+#         HoldTag: "item.amys_hammer.hold",
+#         TriggerTag: "item.amys_hammer.trigger",
+#         StartingCharge: 0,
+#         StartingPhase: 2,
+#         StartingFrequency: 0,
+#         Cooldown: 20,
+#         StaminaUseRate: 25,
+#         ChargeTime: 4,
+#         Charge: false,
+#         WorksOnWater: true,
+#         WorksOnLand: true,
+#         Overwrites: [],
+#         ExtraData: {
+#             HammerReach: 5.0,
+#             ForceEmitterSize: 8,
+#             ForceEmitterPower: 10,
+#             ForceEmitterLife: 20,
+#             HammerJumpGroundAmplifier: 20,
+#             HammerJumpAirAmplifier: 60,
+#             HammerJumpEndTick: 4
+#         }
+#     })
+# ]
+
+
+
+global var pwr_dragon_lord = new Power("dragon_lord")
+eval pwr_dragon_lord.setDisplayName(
+    new text_component({
+        "text" : "Dragon Lord",
+        "color" : Color.RED,
+        "bold" : false
+    })
+)
+eval pwr_dragon_lord.setTeamColor(Color.RED)
+eval pwr_dragon_lord.addMoves([mve_dragon_flight])
+
+global var POWERS = [
+    pwr_dragon_lord
+]
+
+# Character Config
+# global var POWERS_CONFIG = {
+#     dragon_lord: {
+#         id:"dragon_lord",
+#         DisplayName: new text_component({
+#             "text" : "Dragon Lord",
+#             "color" : "red",
+#             "bold" : false
+#         }),
+#         DisplayColor: "red",
+#         TeamID: "pwr.dragon_lord",
+#         TeamColor: "red",
+#         TeamPrefix: new text_component({
+#             "text" : "",
+#             "color" : "white"
+#         }),
+#         TeamSuffix: new text_component({
+#             "text" : "",
+#             "color" : "white"
+#         }),
+#         BaseSpeed: 0.150,
+#         JumpAmplifier: 1,
+#         MoveList: ["dragon_flight","dragon_breath"],
+#         MaximumMoveCount: 4,
+#         HasWings: true
+#     }
+# }

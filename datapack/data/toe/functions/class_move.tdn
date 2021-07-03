@@ -1,0 +1,99 @@
+@on compile
+@priority 31.1
+
+# TODO: Class_Move
+# Add run sequence to move
+# - activating/deactivating
+# - using
+
+define class Move {
+    
+    public static final var TAG_ID_NAMESPACE : string = "mve"
+    
+    private var id : string
+    private var displayName : text_component
+    private var tagID : string
+    private var spiritCost : int
+    private var data : dictionary
+    private var runTags : list
+    
+    private static makeTagID(name : string) : string {
+        return TAG_ID_NAMESPACE + "." + name
+    }
+    private static makeRunTagID(id : string, name : string) : string {
+        return TAG_ID_NAMESPACE + "." + id + "." + name
+    }
+    
+    public new(id : string) {
+        eval this.id = id
+        eval this.tagID = makeTagID(this.id)
+        eval this.spiritCost = 0
+        eval this.data = {}
+        eval this.runTags = []
+    }
+    public getID() : string {
+        return this.id
+    }
+    public getTagID() : string {
+        return this.tagID
+    }
+    public getData(data : dictionary) {
+        return this.data
+    }
+    
+    public setDisplayName(name : text_component) {
+        eval this.displayName = name
+    }
+    public setSpiritCost(cost : int) {
+        eval this.spiritCost = cost
+    }
+    public setData(data : dictionary) {
+        eval this.data = data
+    }
+    
+    public getRunTags() : list {
+        return this.runTags
+    }
+    public getRunTag(index : int) : string {
+        return this.runTags[index]
+    }
+    public getRunTag(name : string) : string {
+        var index = this.runTags.indexOf(makeRunTagID(this.id, name))
+        return this.runTags[index]
+    }
+    public getRunTagCount() : int {
+        return this.runTags.length
+    }
+    public clearRunTags() {
+        eval this.runTags.clear()
+    }
+    public addRunTag(name : string) {
+        eval this.runTags.add(makeRunTagID(this.id, name))
+    }
+    public insertRunTag(name : string, index : int) {
+        eval this.runTags.insert(makeRunTagID(this.id, name), index)
+    }
+    public removeRunTag(index : int) {
+        eval this.runTags.remove(index)
+    }
+    public removeRunTag(name : string) {
+        var index = this.runTags.indexOf(makeRunTagID(this.id, name))
+        eval this.runTags.remove(index)
+    }
+    
+    public setRunTags(tags : list) {
+        eval this.runTags = tags
+    }
+    public addRunTagsByName(names : list) {
+        for (var i = 0; i < names.length; i++) {
+            eval this.addRunTag(names[i])
+        }
+    }
+    
+    public run() {
+        if (this.id.matches("dragon_lord")) {
+            
+        }
+    }
+    
+}

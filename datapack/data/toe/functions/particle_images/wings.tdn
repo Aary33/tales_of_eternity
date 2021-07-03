@@ -1,0 +1,129 @@
+@on compile
+@priority 8
+
+# define function animate {
+#     global var f_wings_animate = resource</>
+#     define function time {
+#         global var f_wings_animate_time = resource</>
+#         set @a->${"toe.timer." + TIMER.WING_FRAME} += 1
+#         
+#         as @a if score @s ${"toe.timer." + TIMER.WING_FRAME} matches 4..
+#         set @s->${"toe.timer." + TIMER.WING_FRAME} = 0
+#         
+#         schedule function / 2t replace
+#     }
+#     define function load_timer {
+#         @ tag load
+#         
+#         schedule function $f_wings_animate_time 2t replace
+#     }
+#     
+#     define function powers {
+#         var timer_objective = "toe.timer." + TIMER.WING_FRAME
+#         for (power_entry in POWERS_CONFIG) {
+#             var power = power_entry.value
+#             if (power.HasWings == true) {
+#                 define function ${new resource(power.id)} {
+#                     if score @s $timer_objective matches ${WING_FRAMES.ANIM_01} function ${WINGS[power.id][WING_FRAMES.ANIM_01]}
+#                     if score @s $timer_objective matches ${WING_FRAMES.ANIM_02} function ${WINGS[power.id][WING_FRAMES.ANIM_02]}
+#                     if score @s $timer_objective matches ${WING_FRAMES.ANIM_03} function ${WINGS[power.id][WING_FRAMES.ANIM_03]}
+#                     if score @s $timer_objective matches ${WING_FRAMES.ANIM_04} function ${WINGS[power.id][WING_FRAMES.ANIM_04]}
+#                 }
+#             }
+#         }
+#     }
+# }
+# 
+# global var getMovePredicateSlot = function(list : string) : resource {
+#     # MoveList
+#     
+#     return resource</>
+# }
+# 
+# global var drawWings = function(id : string) : resource {
+#     define function ${new resource(id)} {
+#         
+#         function active {
+#             function ${WINGS[id][WING_FRAMES.ACTIVE]}
+#         }
+#         
+#         function deactive {
+#             function ${WINGS[id][WING_FRAMES.DEACTIVE]}
+#         }
+#         
+#         return resource</>
+#     }
+#     
+# }
+# 
+# define function draw {
+    global var f_wings_draw = resource</>
+    
+    # function dragon_lord {
+        
+        # if entity @s[tag=${MOVES_CONFIG[move].Tag}]
+        # function primed {
+        #     
+        #     if score @s toe.stat.ground matches 1
+        #     unless entity @s[tag=${MOVES_CONFIG[MOVES.DRAGON_FLIGHT].Tags[MOVES_CONFIG[MOVES.DRAGON_FLIGHT].TagEnums.AIR]}]
+        #     function ground {
+        #         unless score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #         function stand {
+        #             function ${prt_wings[WINGS.PRIMED]}
+        #         }
+        #         
+        #         if score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #         function sneak {
+        #             positioned ~ ~-0.25 ~ rotated ~ ~10
+        #             function ${prt_wings[WINGS.SNEAK]}
+        #         }
+        #     }
+        #     
+        #     if score @s toe.stat.ground matches 0
+        #     function air {
+        #         unless entity @s[tag=${MOVES_CONFIG[MOVES.DRAGON_FLIGHT].Tags[MOVES_CONFIG[MOVES.DRAGON_FLIGHT].TagEnums.AIR]}]
+        #         function ascent {
+        #         }
+        #         
+        #         if entity @s[tag=${MOVES_CONFIG[MOVES.DRAGON_FLIGHT].Tags[MOVES_CONFIG[MOVES.DRAGON_FLIGHT].TagEnums.AIR]}]
+        #         function descent {
+        #             
+        #             unless score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #             function stand {
+        #                 
+        #                 if entity @s[tag=${MOVES_CONFIG[MOVES.DRAGON_FLIGHT].Tags[MOVES_CONFIG[MOVES.DRAGON_FLIGHT].TagEnums.AIR]}]
+        #                 function glide {
+        #                     
+        #                 }
+        #                 function ${prt_wings[WINGS.GLIDE]}
+        #                 
+        #                 unless entity @s[tag=${MOVES_CONFIG[MOVES.DRAGON_FLIGHT].Tags[MOVES_CONFIG[MOVES.DRAGON_FLIGHT].TagEnums.AIR]}]
+        #                 function $f_wings_dragon_lord_animate
+        #             }
+        #             
+        #             if score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #             function sneak {
+        #                 positioned ~ ~-0.25 ~ rotated ~ ~10
+        #                 function $f_wings_dragon_lord_animate
+        #             }
+        #         }
+        #     }
+        #     
+        #     
+        #     
+        # }
+        # 
+        # 
+        # unless entity @s[tag=${MOVES_CONFIG[move].Tag}]
+        # function idle {
+        #     unless score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #     function stand {
+        #         function ${prt_wings[WINGS.IDLE]}
+        #     }
+        #     if score @s ${"toe.callback."+CALLBACK.UPDATE_SNEAK_TIME} matches 1
+        #     function sneak {
+        #         positioned ~ ~-0.25 ~ rotated ~ ~10 function ${prt_wings[WINGS.SNEAK]}
+        #     }
+        # }
+    # }
+# }
