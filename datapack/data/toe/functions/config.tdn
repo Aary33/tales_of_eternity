@@ -1,5 +1,5 @@
 @on compile
-@priority 20.1
+@priority 3.0
 
 
 # General Movement
@@ -21,8 +21,11 @@ eval bb_spirit.setColor(Color.RED)
 eval bb_spirit.setStyle(Style.NOTCHED_10)
 eval bb_spirit.setObjective("toe.spirit")
 
+# Wings
+global var wgs_dragon_lord = new Wings("dragon_lord")
+
 # Move Indexes
-global var mve_dragon_flight = new Move("dragon_flight")
+global var mve_dragon_flight = new Move(Move.DRAGON_FLIGHT)
 eval mve_dragon_flight.setDisplayName(
     new text_component({
         "text" : "Dragon Lord",
@@ -31,15 +34,51 @@ eval mve_dragon_flight.setDisplayName(
     })
 )
 eval mve_dragon_flight.setSpiritCost(20)
-eval mve_dragon_flight.addRunTagsByName(["air", "peak", "up"])
+eval mve_dragon_flight.addRunTagsByName([
+        "charge_-1",
+        "charge_0",
+        "charge_1",
+        "charge_2",
+        "launch",
+        "flight",
+        "ascend_fast",
+        "ascend_slow",
+        "descend_fast",
+        "descend_slow"
+    ]
+)
 eval mve_dragon_flight.setData(
     {
-        XRotationTolerance: {
-            Min: -90.0,
-            Max: 5.0
+        ChargeJumpBoostAmplifier: {
+            Charge0: 3,
+            Charge1: 8,
+            Charge2: 20
         },
-        LevitationAmplifier: 2,
-        JumpBoostAmplifier: [30]
+        ChargeSpiritCost: {
+            Charge0: 10,
+            Charge1: 25,
+            Charge2: 50
+        },
+        AscendRotation: {
+            Fast: [-90.0, -20.0],
+            Slow: [-20.0, 5.0]
+        },
+        DescendRotation: {
+            Fast: [50.0, 90.0],
+            Slow: [5.0, 50.0]
+        },
+        FlightLevitationAmplifier: {
+            Ascend: {
+                Fast: 5,
+                Slow: 2
+            },
+            Descend: {
+                Fast: 245,
+                Slow: 253
+            }
+        },
+        FlightSpiritCost: 2,
+        GlideSpiritCost: 1
     }
 )
 
@@ -121,7 +160,7 @@ global var MOVES = [
 
 
 
-global var pwr_dragon_lord = new Power("dragon_lord")
+global var pwr_dragon_lord = new Power(Power.DRAGON_LORD)
 eval pwr_dragon_lord.setDisplayName(
     new text_component({
         "text" : "Dragon Lord",
@@ -129,7 +168,6 @@ eval pwr_dragon_lord.setDisplayName(
         "bold" : false
     })
 )
-eval pwr_dragon_lord.setTeamColor(Color.RED)
 eval pwr_dragon_lord.addMoves([mve_dragon_flight])
 
 global var POWERS = [

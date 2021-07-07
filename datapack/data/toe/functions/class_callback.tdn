@@ -1,12 +1,27 @@
 @on compile
-@priority 40.0
+@priority 5.0
 
 
 define class Callback {
     public static final var ENUM_PLAYER_COUNT_CHANGED = 0
+    public static final var ENUM_PLAYER_IS_SNEAKING = 1
+    public static final var ENUM_PLAYER_JUMPED = 2
+    public static final var ENUM_PLAYER_JUMP_HEIGHT_REACHED = 3
+    public static final var ENUM_PLAYER_ON_GROUND = 4
+    public static final var ENUM_PLAYER_LANDED = 5
     
-    public static var PTR_PLAYER_COUNT_CHANGED = pointer<#playerCountChanged->toe.callback> 
-    public static var PTR_TMP = pointer<#tmpPlayerCountChanged->toe.callback> 
+    public static final var TAG_JUMPED = "toe.s.jumped"
+    
+    public static final var PTR_PLAYER_COUNT = pointer<#playerCount->toe.var> 
+    public static final var PTR_PLAYER_COUNT_CHANGED = pointer<#playerCountChanged->toe.callback> 
+    public static final var PTR_TMP_PLAYER_COUNT_CHANGED = pointer<#tmpPlayerCountChanged->toe.callback> 
+
+    public static final var PTR_PLAYER_SNEAK_TRIGGER = pointer<@s->toe.s.sneak> 
+    public static final var PTR_PLAYER_SNEAK_PRESSED = pointer<@s->toe.s.sneak.p.+>  
+    public static final var PTR_PLAYER_SNEAK_SINCE_PRESSED = pointer<@s->toe.s.sneak.p.-> 
+    public static final var PTR_PLAYER_JUMP_TRIGGER = pointer<@s->toe.s.jump> 
+    public static final var PTR_FALL_DISTANCE = pointer<@s->toe.s.fall>
+    public static final var PTR_ON_GROUND = pointer<@s->toe.s.ground> 
     
     private static var callbacks : list = []
     
@@ -14,20 +29,24 @@ define class Callback {
         if (callback == ENUM_PLAYER_COUNT_CHANGED) {
             var args = { Callback: callback , Function: f , Data : data}
             eval callbacks.add(args)
+        } 
+        else {
+            var args = { Callback: callback , Function: f }
+            eval callbacks.add(args)
         }
     }
     
     private static playerCountChanged() {
-        set ${Game.PTR_TMP} = 0
+        set ${PTR_TMP_PLAYER_COUNT_CHANGED} = 0
         
         if score ${PTR_PLAYER_COUNT_CHANGED.target} ${PTR_PLAYER_COUNT_CHANGED.member} matches 1..
         set ${PTR_PLAYER_COUNT_CHANGED} = 0
         
-        as @a set ${Game.PTR_TMP} += 1
+        as @a set ${PTR_TMP_PLAYER_COUNT_CHANGED} += 1
         
-        unless score ${Game.PTR_TMP.target} ${Game.PTR_TMP.member} = ${Game.PTR_PLAYER_COUNT.target} ${Game.PTR_PLAYER_COUNT.member}
-        function trigger {
-            set ${Game.PTR_PLAYER_COUNT} = ${Game.PTR_TMP}
+        unless score ${PTR_TMP_PLAYER_COUNT_CHANGED.target} ${PTR_TMP_PLAYER_COUNT_CHANGED.member} = ${PTR_PLAYER_COUNT.target} ${PTR_PLAYER_COUNT.member}
+        function ${new resource("trigger_" + ENUM_PLAYER_COUNT_CHANGED)} {
+            set ${PTR_PLAYER_COUNT} = ${PTR_TMP_PLAYER_COUNT_CHANGED}
             set ${PTR_PLAYER_COUNT_CHANGED} = 1
             for (var i = 0; i < callbacks.length; i ++) {
                 if (callbacks[i].Callback == ENUM_PLAYER_COUNT_CHANGED) {
@@ -38,8 +57,93 @@ define class Callback {
         }
     }
     
+    private static playerIsSneaking() {
+        set ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED} += 1
+        
+        unless score ${PTR_PLAYER_SNEAK_TRIGGER.target} ${PTR_PLAYER_SNEAK_TRIGGER.member} matches 1..
+        set ${Callback.PTR_PLAYER_SNEAK_PRESSED} = 0
+        
+        if score ${PTR_PLAYER_SNEAK_TRIGGER.target} ${PTR_PLAYER_SNEAK_TRIGGER.member} matches 1..
+        function ${new resource("trigger_" + ENUM_PLAYER_IS_SNEAKING)} {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_IS_SNEAKING) {
+                    eval callbacks[i].Function()
+                }
+            }
+            set ${Callback.PTR_PLAYER_SNEAK_PRESSED} += 1
+            set ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED} = 0
+            set ${Callback.PTR_PLAYER_SNEAK_TRIGGER} = 0
+        }
+    }
+    private static playerJumped() {
+        if score ${Callback.PTR_PLAYER_JUMP_TRIGGER.target} ${Callback.PTR_PLAYER_JUMP_TRIGGER.member} matches 1..
+        function ${new resource("trigger_" + ENUM_PLAYER_JUMPED)} {
+            tag @s add ${Callback.TAG_JUMPED}
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_JUMPED) {
+                    eval callbacks[i].Function()
+                }
+            }
+            set ${PTR_PLAYER_JUMP_TRIGGER} = 0
+        }
+    }
+    
+    private static playerJumpHeightReached() {
+        store result score ${PTR_FALL_DISTANCE.target} ${PTR_FALL_DISTANCE.member}
+        data get entity ${PTR_FALL_DISTANCE.target} FallDistance 10
+        
+        if entity @s[tag=${Callback.TAG_JUMPED}]
+        unless score ${PTR_FALL_DISTANCE.target} ${PTR_FALL_DISTANCE.member} matches 0
+        function ${new resource("trigger_" + ENUM_PLAYER_JUMP_HEIGHT_REACHED)} {
+            tag @s remove ${Callback.TAG_JUMPED}
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_JUMP_HEIGHT_REACHED) {
+                    eval callbacks[i].Function()
+                }
+            }
+        }
+    }
+    
+    private static playerOnGround() {
+        if predicate ${pre_player_on_ground.getResource()}
+        function ${new resource("trigger_" + ENUM_PLAYER_ON_GROUND)} {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_ON_GROUND) {
+                    eval callbacks[i].Function()
+                }
+            }
+        }
+    }
+    private static playerLanded() {
+        
+        unless predicate ${pre_player_on_ground.getResource()}
+        set $PTR_ON_GROUND = 0
+        
+        if predicate ${pre_player_on_ground.getResource()}
+        if score ${PTR_ON_GROUND.target} ${PTR_ON_GROUND.member} matches 0
+        function ${new resource("trigger_" + ENUM_PLAYER_LANDED)} {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_LANDED) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+            set $PTR_ON_GROUND = 1
+        }
+    }
+    
     public static run() {
-        eval playerCountChanged()
+        function global {
+            eval playerCountChanged()
+        }
+        as @a at @s function local {
+            eval playerIsSneaking()
+            eval playerJumped()
+            eval playerJumpHeightReached()
+            eval playerOnGround()
+            eval playerLanded()
+        }
+        
     }
     
 }

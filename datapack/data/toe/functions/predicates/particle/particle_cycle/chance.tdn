@@ -1,0 +1,16 @@
+@on compile
+
+for (var i = 0; i < ParticleCycle.CHANCE_RESOURCES.length; i++ ) {
+    var chance = ParticleCycle.CHANCE_RESOURCES[i].Chance
+    var resource = ParticleCycle.CHANCE_RESOURCES[i].Resource
+    eval File.out.writeData(
+        resource.getTridentDirectory() ,
+        JSON.stringify(
+            {
+                "condition": "random_chance",
+                "chance": chance
+            },
+            true
+        )
+    )
+}

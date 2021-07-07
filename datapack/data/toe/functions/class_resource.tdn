@@ -1,0 +1,91 @@
+@on compile
+@priority 5.1
+
+define class Resource {
+    
+    public static final var TRIDENT_DIRECTORY_START = "data"
+    public static final var FILE_TYPE = "json"
+    
+    public static final var ENUM_ADVANCEMENT = 0
+    public static final var ENUM_ITEM_MODIFIER = 1
+    public static final var ENUM_LOOT_TABLE = 2
+    public static final var ENUM_PREDICATE = 3
+    public static final var ENUM_RECIPE = 4
+    public static final var ENUM_TAG = 5
+    public static final var ENUM_DIMENSION = 6
+    public static final var ENUM_DIMENSION_TYPE = 7
+    public static final var ENUM_WORLDGEN = 8
+    
+    public static final var TYPE_FOLDERS = [
+        "advancements",
+        "item_modifiers",
+        "loot_tables",
+        "predicates",
+        "recipes",
+        "tags",
+        "dimension",
+        "dimension_type",
+        "worldgen"
+    ]
+    
+    private var resource : resource
+    private var namespace : string
+    private var directory : string
+    private var title : string
+    private var type : int
+    
+    public new(resource : resource, type : int) {
+        var str = (string) resource
+        eval this.namespace = str.substring(0, str.indexOf(':'))
+        eval this.directory = str.substring(str.indexOf(':') + 1, str.lastIndexOf('/'))
+        eval this.title = str.substring(str.lastIndexOf('/') + 1, str.length)
+        eval this.type = type
+        
+        eval this.resource = resource
+    }
+    
+    public new(namespace : string, directory : string, title : string, type : int) {
+        eval this.namespace = namespace
+        eval this.directory = directory
+        eval this.title = title
+        eval this.type = type
+        
+        eval this.resource = new resource(this.namespace + ":" + this.directory + "/" + title)
+    }
+    
+    public getResource() : resource {
+        return this.resource
+    }
+    
+    public getTridentDirectory() {
+        return TRIDENT_DIRECTORY_START + "/" + namespace + "/" + TYPE_FOLDERS[type] + "/" + directory + "/" + title + "." + FILE_TYPE
+    }
+    
+    
+    
+    
+    public static makeSlotPredicateResources() {
+        for (var i = 0; i < HOTBAR_SLOT_COUNT; i++) {
+            eval SLOT_PREDICATE_RESOURCES.add(new resource(Game.NAMESPACE + ":" + SLOT_RESOURCE_LOCATION + "_" + i))
+        }
+    }
+    
+}
+
+
+# Slots
+global var is_slot_selected_predicates = []
+for (var i = 0; i < Game.MAX_HOTBAR_SLOTS; i ++) {
+    var title = "is_slot_selected"
+    var resource = new Resource(Game.NAMESPACE, "entities/player", title + "_" + i, Resource.ENUM_PREDICATE)
+    eval is_slot_selected_predicates.add(resource)
+}
+
+# Callback
+global var pre_player_on_ground = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
+
+# Particle
+global var pre_particlecycle_chance_low = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
+global var pre_particlecycle_chance_normal = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
+global var pre_particlecycle_chance_high = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
+

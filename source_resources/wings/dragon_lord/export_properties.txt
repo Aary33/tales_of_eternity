@@ -1,0 +1,8 @@
+Coordinate Mode: Relative Local
+Coordinate Axis: X-Y
+Rotation: 0deg
+Flip: True
+Hor. Alignment: Center
+Vert. Alignment: Top
+Size: 0.55
+Density: 12

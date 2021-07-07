@@ -1,8 +1,10 @@
 @on compile
+@priority 0.0
 
-for (var i = 0; i < MAX_SLOTS; i++) {
+for (var i = 0; i < is_slot_selected_predicates.length; i++) {
+    var resource = is_slot_selected_predicates[i]
     eval File.out.writeData(
-        "data/toe/predicates/entities/player/is_slot_selected_" + i + ".json" ,
+        resource.getTridentDirectory() ,
         JSON.stringify(
             {
                 "condition": "minecraft:entity_properties",

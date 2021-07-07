@@ -1,5 +1,5 @@
 @on compile
-@priority 31.1
+@priority 4.2
 
 # TODO: Class_Move
 # Add run sequence to move
@@ -9,6 +9,9 @@
 define class Move {
     
     public static final var TAG_ID_NAMESPACE : string = "mve"
+    
+    public static final var DRAGON_FLIGHT : string = "dragon_flight"
+    public static final var DRAGON_BREATH : string = "dragon_breath"
     
     private var id : string
     private var displayName : text_component
@@ -37,7 +40,7 @@ define class Move {
     public getTagID() : string {
         return this.tagID
     }
-    public getData(data : dictionary) {
+    public getData() : dictionary {
         return this.data
     }
     
@@ -90,9 +93,298 @@ define class Move {
         }
     }
     
-    public run() {
-        if (this.id.matches("dragon_lord")) {
-            
+    public static run(moves : list) {
+        for (var i = 0; i < moves.length; i++) {
+            var move = moves[i]
+            function ${new resource(move.getID() + "_run")} {
+                if (move.getID().matches(DRAGON_FLIGHT)) {
+                    if entity @s[tag=${move.getTagID()}]
+                    function wings {
+                        eval wgs_dragon_lord.animate()
+                    }
+                    
+                    if score @s toe.spirit matches ..0
+                    if entity @s[tag=${move.getTagID()}]
+                    function depleted_spirit {
+                        eval Wings.setIdle()
+                        
+                        if entity @s[tag=${move.getRunTag("ascend_fast")}]
+                        tag @s add ${move.getRunTag("descend_slow")}
+                        if entity @s[tag=${move.getRunTag("ascend_slow")}]
+                        tag @s add ${move.getRunTag("descend_slow")}
+                        
+                        tag @s remove ${move.getRunTag("ascend_fast")}
+                        tag @s remove ${move.getRunTag("ascend_slow")}
+                        
+                        effect clear @s minecraft:levitation
+                    }
+                    
+                    if entity @s[tag=${move.getTagID()}]
+                    function charge {
+                        
+                        if score @s toe.spirit matches ..0
+                        if entity @s[tag=!${move.getRunTag("charge_-1")}]
+                        function depleted_spirit {
+                            eval Wings.setIdle()
+                            tag @s remove ${move.getRunTag("charge_-1")}
+                            tag @s remove ${move.getRunTag("charge_0")}
+                            tag @s remove ${move.getRunTag("charge_1")}
+                            tag @s remove ${move.getRunTag("charge_2")}
+                            effect clear @s minecraft:jump_boost
+                        }
+                        
+                        if score ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.member} matches 10..
+                        if entity @s[tag=!${move.getRunTag("flight")}]
+                        function charge_-1 {
+                            
+                            if entity @s[tag=!${move.getRunTag("charge_-1")}]
+                            function first_time {
+                                eval Wings.setSlow()
+                                eval Wings.setIdle()
+                                tag @s remove ${move.getRunTag("charge_0")}
+                                tag @s remove ${move.getRunTag("charge_1")}
+                                tag @s remove ${move.getRunTag("charge_2")}
+                                tag @s add ${move.getRunTag("charge_-1")}
+                                effect clear @s minecraft:jump_boost
+                            }
+                            
+                        }
+                        
+                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge0}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                        function charge_0 {
+                            eval Wings.setFly()
+                            eval Wings.setSlow()
+                            
+                            function draw_cycle {
+                                var particle = new Particle("minecraft:smoke", 0.05, 0)
+                                eval new ParticleCycle(18.0, 1.5, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                                
+                                eval particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
+                                eval particle.setFirstColor(1.0, 0.75, 0.0)
+                                eval particle.setSecondColor(1.0, 0.95, 0.55)
+                                eval particle.setSize(1.25)
+                                # eval new ParticleCycle(36.0, 0.3, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                            }
+                            
+                            if entity @s[tag=!${move.getRunTag("charge_0")}]
+                            unless entity @s[tag=${move.getRunTag("charge_1")}]
+                            unless entity @s[tag=${move.getRunTag("charge_2")}]
+                            function first_time {
+                                tag @s remove ${move.getRunTag("charge_-1")}
+                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge0} true
+                                tag @s add ${move.getRunTag("charge_0")}
+                            }
+                        }
+                        
+                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge1}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 40..
+                        function charge_1 {
+                            eval Wings.setNormal()
+                            
+                            function draw_cycle {
+                                var particle = new Particle("minecraft:smoke", 0.075, 0)
+                                eval new ParticleCycle(15.0, 1.75, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                                
+                                eval particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
+                                eval particle.setFirstColor(0.75, 0.3, 0.0)
+                                eval particle.setSecondColor(0.25, 0.10, 0.0)
+                                eval particle.setSize(1.5)
+                                # eval new ParticleCycle(30.0, 0.5, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_HIGH)
+                            }
+                            
+                            if entity @s[tag=!${move.getRunTag("charge_1")}]
+                            unless entity @s[tag=${move.getRunTag("charge_2")}]
+                            function first_time {
+                                tag @s remove ${move.getRunTag("charge_0")}
+                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge1} true
+                                tag @s add ${move.getRunTag("charge_1")}
+                            }
+                        }
+                        
+                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge2}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 80..
+                        function charge_2 {
+                            eval Wings.setFast()
+                            
+                            function draw_cycle {
+                                var particle = new Particle("minecraft:smoke", 0.4, 0)
+                                eval new ParticleCycle(15.0, 2.5, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                                
+                                var particle = new Particle("minecraft:large_smoke", 0.5, 0)
+                                eval new ParticleCycle(45.0, 3.5, 0.15, coordinates<0.0 0.01 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                                
+                                eval particle = new Particle("minecraft:dust", 0.0, 0)
+                                eval particle.setFirstColor(0.15, 0.1, 0.1)
+                                eval particle.setSize(1.5)
+                                # eval new ParticleCycle(20.0, 0.75, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                            }
+                            
+                            if entity @s[tag=!${move.getRunTag("charge_2")}]
+                            function first_time {
+                                tag @s remove ${move.getRunTag("charge_1")}
+                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge2} true
+                                tag @s add ${move.getRunTag("charge_2")}
+                            }
+                        }
+                        
+                        
+                        
+                    }
+                    
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMPED,
+                        function() {
+                            if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge0}..
+                            if entity @s[tag=${move.getTagID()}]
+                            if entity @s[tag=!${move.getRunTag("charge_-1")}]
+                            if entity @s[tag=!${move.getRunTag("launch")}]
+                            function jump {
+                                tag @s add ${move.getRunTag("launch")}
+                                var particle = new Particle("minecraft:campfire_cosy_smoke", 0.5, 0)
+                                playsound minecraft:entity.generic.explode player @a ~ ~ ~ 0.8 1.2
+                                
+                                if entity @s[tag=${move.getRunTag("charge_0")}]
+                                function weak {
+                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge0}
+                                    eval new ParticleCycle(45.0, 0.1, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                }
+                                if entity @s[tag=${move.getRunTag("charge_1")}]
+                                function normal {
+                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge1}
+                                    particle minecraft:lava ~ ~1.0 ~ 0.5 0 0.5 0 2 force @a
+                                    eval new ParticleCycle(36.0, 0.2, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                }
+                                if entity @s[tag=${move.getRunTag("charge_2")}]
+                                function strong {
+                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge2}
+                                    particle minecraft:flash ~ ~1.0 ~ 0 0 0 0 1 force @a
+                                    particle minecraft:lava ~ ~1.0 ~ 0.5 0 0.5 0 10 force @a
+                                    eval new ParticleCycle(18.0, 0.5, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                }
+                            }
+                        }
+                    )
+                    
+                    if entity @s[tag=${move.getRunTag("launch")}]
+                    function during_launch {
+                        var particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
+                        eval particle.setFirstColor(1.0, 0.75, 0.0)
+                        eval particle.setSecondColor(1.0, 0.1, 0.0)
+                        eval particle.setSize(2.0)
+                        eval new ParticleCycle(45.0, 0.25, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                        
+                        eval particle = new Particle("minecraft:poof", 0.5, 0)
+                        eval new ParticleCycle(45.0, 0.1, -1.0, coordinates<0.0 -1.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                        
+                    }
+                    
+                    var windSound = new Sound(resource<minecraft:item.elytra.flying>)
+                    eval windSound.setVolume(0.3)
+                    eval windSound.setPitch(1.1)
+                    eval windSound.setMinVolume(0.3)
+                    var windSoundCycle = new SoundCycle("wing_glide", windSound, 100)
+                    
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMP_HEIGHT_REACHED,
+                        function() {
+                            if entity @s[tag=${move.getRunTag("launch")}]
+                            function reached_height {
+                                eval windSoundCycle.play(false)
+                                tag @s remove ${move.getRunTag("launch")}
+                                tag @s add ${move.getRunTag("flight")}
+                            }
+                        }
+                    )
+                    
+                    var remove_flight_subtags = function() {
+                        tag @s remove ${move.getRunTag("ascend_fast")}
+                        tag @s remove ${move.getRunTag("ascend_slow")}
+                        tag @s remove ${move.getRunTag("descend_fast")}
+                        tag @s remove ${move.getRunTag("descend_slow")}
+                        effect clear @s minecraft:levitation
+                    }
+                    
+                    if entity @s[tag=${move.getRunTag("flight")}]
+                    function during_flight {
+                        var descend_slow = function {
+                            function descend_slow {
+                                eval Wings.setGlide()
+                                eval Wings.setSlow()
+                                
+                                eval remove_flight_subtags()
+                                tag @s add ${move.getRunTag("descend_slow")}
+                                effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Slow} true
+                            }
+                        }
+                        
+                        if entity @s[x_rotation=${move.getData().AscendRotation.Fast[0]}..${move.getData().AscendRotation.Fast[1]}]
+                        function ascend_fast {
+                            if score @s toe.spirit matches 2..
+                            function has_spirit {
+                                set @s->toe.spirit -= 2
+                                eval Wings.setFly()
+                                eval Wings.setFast()
+                                
+                                eval remove_flight_subtags()
+                                tag @s add ${move.getRunTag("ascend_fast")}
+                                effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Ascend.Fast} true
+                            }
+                            
+                            if score @s toe.spirit matches ..0
+                            function $descend_slow
+                        }
+                        
+                        
+                        if entity @s[x_rotation=${move.getData().AscendRotation.Slow[0]}..${move.getData().AscendRotation.Slow[1]}]
+                        function ascend_slow {
+                            if score @s toe.spirit matches 1..
+                            function has_spirit {
+                                set @s->toe.spirit -= 1
+                                eval Wings.setFly()
+                                eval Wings.setNormal()
+                                
+                                eval remove_flight_subtags()
+                                tag @s add ${move.getRunTag("ascend_slow")}
+                                effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Ascend.Slow} true
+                            }
+                            
+                            if score @s toe.spirit matches ..0
+                            function $descend_slow
+                        }
+                        
+                        if entity @s[x_rotation=${move.getData().DescendRotation.Slow[0]}..${move.getData().DescendRotation.Slow[1]}]
+                        function $descend_slow
+                        
+                        if entity @s[x_rotation=${move.getData().DescendRotation.Fast[0]}..${move.getData().DescendRotation.Fast[1]}]
+                        function descend_fast {
+                            eval Wings.setDrop()
+                            eval Wings.setSlow()
+                            
+                            eval remove_flight_subtags()
+                            tag @s add ${move.getRunTag("descend_fast")}
+                            effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Fast} true
+                        }
+                        
+                        eval Callback.addCallback(Callback.ENUM_PLAYER_LANDED,
+                            function() {
+                                if entity @s[tag=${move.getRunTag("flight")}]
+                                function landed {
+                                    eval windSoundCycle.stop(false)
+                                    eval Wings.setIdle()
+                                    tag @s remove ${move.getRunTag("flight")}
+                                    eval remove_flight_subtags()
+                                    playsound minecraft:entity.player.small_fall player @a ~ ~ ~ 0.5 0.9
+                                    function draw {
+                                        var particle = new Particle("minecraft:campfire_cosy_smoke", 0.2, 0)
+                                        eval new ParticleCycle(36.0, 0.5, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                } else if (move.getID().matches(DRAGON_BREATH)) {
+                    
+                }
+            }
         }
     }
     

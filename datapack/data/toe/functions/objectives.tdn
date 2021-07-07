@@ -1,17 +1,11 @@
 @on compile
-@priority 40.0
+@priority 5.1
 
 # Resources
 #
 #
 
 # Predicates
-
-global var MAX_SLOTS = 9
-global var pre_is_slot_selected = []
-for (var i = 0; i < MAX_SLOTS; i++) {
-    eval pre_is_slot_selected.add(new resource("toe:entities/player/is_slot_selected_" + i))
-}
 
 # Particle Enums
 global var WING_FRAMES = {}
@@ -73,14 +67,17 @@ define objective toe.age dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text
 define objective toe.spirit dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Spirit"}]
 define objective toe.var dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Variables", "color": "green"}]
 define objective toe.bar dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Bossbar ID"}]
+define objective toe.wings dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Wings Frame", "color": "white"}]
+define objective toe.s.sneak minecraft.custom:minecraft.sneak_time ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Trigger Stat", "color": "white"}]
+define objective toe.s.sneak.p.+ dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Stat", "color": "white"}]
+define objective toe.s.sneak.p.- dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Since Stat", "color": "white"}]
+define objective toe.s.jump minecraft.custom:minecraft.jump ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player jump Trigger Stat", "color": "white"}]
+define objective toe.s.fall dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"fallDistance Stat", "color": "white"}]
+define objective toe.s.ground dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"on_ground Stat", "color": "white"}]
+
 
 define objective toe.stat.death deathCount ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player deathCount Stat", "color": "white"}]
-define objective toe.stat.jump minecraft.custom:minecraft.jump ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player jump Stat", "color": "white"}]
-define objective toe.stat.slot dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player selectedSlot Stat", "color": "white"}]
-define objective toe.stat.sneak.t minecraft.custom:minecraft.sneak_time ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Trigger Stat", "color": "white"}]
-define objective toe.stat.sneak.p dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Press Stat", "color": "white"}]
-define objective toe.stat.fallD dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player fallDistance Stat", "color": "white"}]
-define objective toe.stat.ground dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player OnGround Stat", "color": "white"}]
+# define objective toe.stat.slot dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player selectedSlot Stat", "color": "white"}]
 
 # Callbacks
 global var callback_playerCountChanged = entity<#playerCountChanged>

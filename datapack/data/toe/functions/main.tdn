@@ -28,23 +28,37 @@ var addTeams = function() {
         team modify $id seeFriendlyInvisibles false
     }
 }
-var removeTeams = function() {
-    for (var i = 0; i < POWERS.length; i++ ) {
-        var id = POWERS[i].getTeamID()
-        team remove $id
-    }
-}
+# var removeTeams = function() {
+#     for (var i = 0; i < POWERS.length; i++ ) {
+#         var id = POWERS[i].getTeamID()
+#         team remove $id
+#     }
+# }
 var setGamerules = function() {
     # gamerule fallDamage false
 }
 var initializePointers = function() {
     set ${Game.PTR_TMP} = 0
-    set ${Game.PTR_PLAYER_COUNT} = 0
 }
 
-define function second {
-    global var f_second = resource</>
+define function 1s {
+    global var f_1s = resource</>
     schedule function / 1s replace
+}
+define function 10t {
+    global var f_10t = resource</>
+    eval Wings.slow()
+    schedule function / 10t replace
+}
+define function 4t {
+    global var f_4t = resource</>
+    eval Wings.normal()
+    schedule function / 4t replace
+}
+define function 2t {
+    global var f_2t = resource</>
+    eval Wings.fast()
+    schedule function / 2t replace
 }
 
 define function tick {
@@ -55,7 +69,12 @@ define function tick {
 
 define function init {
     @tag load
-    schedule function $f_second 1s replace
+    schedule function $f_1s 1s replace
+    schedule function $f_2t 2t replace
+    schedule function $f_4t 4t replace
+    schedule function $f_10t 10t replace
+    
+    eval SoundCycle.load()
     
     # eval Game.addTeams()
     eval setGamerules()
@@ -65,7 +84,7 @@ define function init {
 }
 
 define function uninstall {
-    eval removeTeams()
+    # eval removeTeams()
     eval removeObjectives()
     eval BossbarFamily.uninstall()
     

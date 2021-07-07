@@ -1,8 +1,0 @@
-@on compile
-@priority 9
-
-define function player_sneak_time {
-    @tag tick
-    as @a unless score @s ${"toe.callback." + CALLBACK.UPDATE_SNEAK_TIME} matches 1 set @s->toe.stat.sneak.p = 0
-    as @a if score @s ${"toe.callback." + CALLBACK.UPDATE_SNEAK_TIME} matches 1 set @s->toe.stat.sneak.p += 1
-}

@@ -1,0 +1,219 @@
+@on compile
+@priority 4.4
+
+define class Wings {
+    public static final var ANIMATION_RUNTIME : int = 4
+    public static final var MAX_SPRITES : int = 5
+    
+    public static final var FRAMES_FLY : list = [0, 1, 2, 3]
+    public static final var FRAMES_GLIDE : list = [2, 2, 2, 2]
+    public static final var FRAMES_DROP : list = [0, 0, 0, 0]
+    public static final var FRAMES_IDLE : list = [4, 4, 4, 4]
+    
+    public static final var TAG_FAST = "wings.fast"
+    public static final var TAG_SLOW = "wings.slow"
+    
+    public static final var TAG_FLY = "wings.fly"
+    public static final var TAG_GLIDE = "wings.glide"
+    public static final var TAG_DROP = "wings.drop"
+    public static final var TAG_IDLE = "wings.idle"
+    
+    public static final var SND_WING_FLAP = resource<minecraft:entity.ender_dragon.flap>
+    public static var flapSoundCycleSlow : SoundCycle
+    public static var flapSoundCycleNormal : SoundCycle
+    public static var flapSoundCycleFast : SoundCycle
+    
+    public static final var PTR_WING_FRAME = pointer<@s->toe.wings>
+    
+    private var id : string
+    private var resources : list
+    
+    public static makeWingResource(id : string, index : int) : resource {
+        var resource = new resource(Game.NAMESPACE + ":wings/" + id + "/" + index)
+        return resource
+    }
+    public static makeSounds() {
+        var flapSound = new Sound(SND_WING_FLAP)
+        eval flapSound.setVolume(0.4)
+        eval flapSound.setPitch(0.9)
+        
+        eval flapSoundCycleSlow = new SoundCycle("wing_flap_slow", flapSound, 20)
+        
+        eval flapSound = new Sound(SND_WING_FLAP)
+        eval flapSound.setVolume(0.5)
+        eval flapSound.setPitch(1.0)
+        
+        eval flapSoundCycleNormal = new SoundCycle("wing_flap_normal", flapSound, 16)
+        
+        eval flapSound = new Sound(SND_WING_FLAP)
+        eval flapSound.setVolume(0.6)
+        eval flapSound.setPitch(1.1)
+        
+        eval flapSoundCycleFast = new SoundCycle("wing_flap_fast", flapSound, 8)
+        
+    }
+    
+    public new(id : string) {
+        eval this.id = id
+        eval this.resources = []
+        for (var i = 0; i < MAX_SPRITES; i++) {
+            eval this.resources.add(makeWingResource(this.id, i))
+        }
+    }
+    public static clearSpeed() {
+        tag @s remove $TAG_FAST
+        tag @s remove $TAG_SLOW
+    }
+    public static setSlow() {
+        eval clearSpeed()
+        tag @s add $TAG_SLOW
+    }
+    public static setNormal() {
+        eval clearSpeed()
+    }
+    public static setFast() {
+        eval clearSpeed()
+        tag @s add $TAG_FAST
+    }
+    public static clearMotion() {
+        tag @s remove $TAG_FLY 
+        tag @s remove $TAG_GLIDE
+        tag @s remove $TAG_DROP
+        tag @s remove $TAG_IDLE
+    }
+    public static clear() {
+        eval clearSpeed()
+        eval clearMotion()
+    }
+    public static setFly() { 
+        eval clearMotion()
+        tag @s add $TAG_FLY 
+    } 
+    public static setGlide() { 
+        eval clearMotion()
+        tag @s add $TAG_GLIDE 
+    } 
+    public static setDrop() { 
+        eval clearMotion()
+        tag @s add $TAG_DROP 
+    } 
+    public static setIdle() { 
+        eval clearMotion()
+        tag @s add $TAG_IDLE 
+    } 
+    
+    public animate() {
+        var animate = function {
+            function ${new resource("wings_" + id)}{
+                if entity @s[tag=$TAG_FLY]
+                function fly {
+                    
+                    for (var i = 0; i < ANIMATION_RUNTIME; i++) {
+                        if score @s ${PTR_WING_FRAME.member} matches $i function ${resources[FRAMES_FLY[i]]}
+                    }
+                }
+                if entity @s[tag=$TAG_GLIDE]
+                function glide {
+                    for (var i = 0; i < ANIMATION_RUNTIME; i++) {
+                        if score @s ${PTR_WING_FRAME.member} matches $i function ${resources[FRAMES_GLIDE[i]]}
+                    }
+                }
+                if entity @s[tag=$TAG_DROP]
+                function drop {
+                    for (var i = 0; i < ANIMATION_RUNTIME; i++) {
+                        if score @s ${PTR_WING_FRAME.member} matches $i function ${resources[FRAMES_DROP[i]]}
+                    }
+                }
+                if entity @s[tag=$TAG_IDLE]
+                function idle {
+                    for (var i = 0; i < ANIMATION_RUNTIME; i++) {
+                        if score @s ${PTR_WING_FRAME.member} matches $i function ${resources[FRAMES_IDLE[i]]}
+                    }
+                }
+            }
+        }
+        
+        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+        positioned ~ ~1.75 ~
+        positioned ^ ^ ^0.2
+        rotated ~ 35
+        function $animate
+        
+        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 0
+        positioned ~ ~2.0 ~
+        rotated ~ 20
+        function $animate
+    }
+    
+    public static stopFlapSounds() {
+        eval flapSoundCycleSlow.stop(true)
+        eval flapSoundCycleNormal.stop(true)
+        eval flapSoundCycleFast.stop(true)
+    }
+    
+    public static slow() {
+        as @a[tag=$TAG_SLOW,tag=!$TAG_FAST]
+        function slow {
+            set $PTR_WING_FRAME += 1
+            
+            if score @s ${PTR_WING_FRAME.member} matches ${ANIMATION_RUNTIME}..
+            set @s->${PTR_WING_FRAME.member} = 0
+            
+            if entity @s[tag=$TAG_FLY]
+            function play_flap_sound {
+                eval flapSoundCycleNormal.stop(true)
+                eval flapSoundCycleFast.stop(true)
+                
+                eval flapSoundCycleSlow.play(false)
+            }
+            unless entity @s[tag=$TAG_FLY]
+            function stop_play_sound {
+                eval stopFlapSounds()
+            }
+        }
+    }
+    public static normal() {
+        as @a[tag=!$TAG_SLOW,tag=!$TAG_FAST]
+        function normal {
+            set $PTR_WING_FRAME += 1
+            
+            if score @s ${PTR_WING_FRAME.member} matches ${ANIMATION_RUNTIME}..
+            set @s->${PTR_WING_FRAME.member} = 0
+            
+            if entity @s[tag=$TAG_FLY]
+            function play_flap_sound {
+                eval flapSoundCycleSlow.stop(true)
+                eval flapSoundCycleFast.stop(true)
+                
+                eval flapSoundCycleNormal.play(false)
+            }
+            unless entity @s[tag=$TAG_FLY]
+            function stop_play_sound {
+                eval stopFlapSounds()
+            }
+        }
+    }
+    public static fast() {
+        as @a[tag=!$TAG_SLOW,tag=$TAG_FAST]
+        function fast {
+            set $PTR_WING_FRAME += 1
+            
+            if score @s ${PTR_WING_FRAME.member} matches ${ANIMATION_RUNTIME}..
+            set @s->${PTR_WING_FRAME.member} = 0
+            
+            if entity @s[tag=$TAG_FLY]
+            function play_flap_sound {
+                eval flapSoundCycleSlow.stop(true)
+                eval flapSoundCycleNormal.stop(true)
+                
+                eval flapSoundCycleFast.play(false)
+            }
+            unless entity @s[tag=$TAG_FLY]
+            function stop_play_sound {
+                eval stopFlapSounds()
+            }
+        }
+    }
+}
+
+eval Wings.makeSounds()

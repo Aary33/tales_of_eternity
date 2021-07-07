@@ -1,5 +1,5 @@
 @on compile
-@priority 30.0
+@priority 4.3
 
 
 define class Bossbar {
@@ -78,7 +78,7 @@ define class BossbarFamily : Bossbar {
             set $PTR_BOSSBAR_COUNT += 1
             tag @a[tag=$tag] remove $tag
             
-            unless score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} = ${Game.PTR_PLAYER_COUNT.target} ${Game.PTR_PLAYER_COUNT.member}
+            unless score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} = ${Callback.PTR_PLAYER_COUNT.target} ${Callback.PTR_PLAYER_COUNT.member}
             function /
         }
         

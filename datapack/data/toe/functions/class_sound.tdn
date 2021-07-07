@@ -1,0 +1,85 @@
+@on compile
+@priority 5.0
+
+define class Sound {
+    private var resource : resource
+    private var volume : real
+    private var pitch : real
+    private var minVolume : real
+    
+    public new(resource : resource) {
+        eval this.resource = resource
+        eval this.volume = 1.0
+        eval this.pitch = 1.0
+        eval this.minVolume = 0.0
+    }
+    
+    public getResource() : resource { return this.resource }
+    public getVolume() : real { return this.volume }
+    public getPitch() : real { return this.pitch }
+    public getMinVolume() : real { return this.minVolume }
+    
+    public setVolume(volume : real) { eval this.volume = volume }
+    public setPitch(pitch : real) { eval this.pitch = pitch }
+    public setMinVolume(minVolume : real) { eval this.minVolume = minVolume }
+}
+
+define class SoundCycle {
+    public static final var SOUND_NAMESPACE = "snd"
+    public static var SOUND_CYCLES = []
+    
+    private var name : string
+    private var sound : Sound
+    private var loopTime : int
+    
+    public new(name : string, sound : Sound, loopTime : int) {
+        eval this.name = name
+        eval this.sound = sound
+        eval this.loopTime = loopTime
+        
+        eval SOUND_CYCLES.add(this)
+    }
+    
+    public setName(name : string)  { eval this.name = name }
+    public setSound(sound : Sound) { eval this.sound = sound }
+    public setLoopTime(loopTime : int) { eval this.loopTime = loopTime }
+    public getName() : string { return this.name }
+    public getSound() : Sound { return this.sound }
+    public getLoopTime() : int { return this.loopTime }
+    public getPlayTag() : string { return Game.NAMESPACE + "." + SOUND_NAMESPACE + "." + this.name }
+    
+    public play(waitUntilNextCycle : boolean) {
+        if (waitUntilNextCycle == false) {
+            if entity @s[tag=!${getPlayTag()}]
+            playsound ${sound.getResource()} player @s ~ ~ ~ ${sound.getVolume()} ${sound.getPitch()} ${sound.getMinVolume()}
+        }
+        
+        tag @s add ${getPlayTag()}
+    }
+    
+    public stop(waitUntilNextCycle : boolean) {
+        if (waitUntilNextCycle == false) {
+            if entity @s[tag=${getPlayTag()}]
+            stopsound @s player ${sound.getResource()}
+        }
+        
+        tag @s remove ${getPlayTag()}
+    }
+    
+    public static load() {
+        for (var i = 0; i < SOUND_CYCLES.length; i ++) {
+            var soundCycle = SOUND_CYCLES[i]
+            var recursive = function {
+                var function = resource</>
+                var sound = soundCycle.getSound()
+                as @a[tag=${soundCycle.getPlayTag()}] at @s
+                playsound ${sound.getResource()} player @s ~ ~ ~ ${sound.getVolume()} ${sound.getPitch()} ${sound.getMinVolume()}
+                
+                /${"schedule function " + function + " " + soundCycle.getLoopTime() + "t replace"}
+            }
+            function $recursive
+        }
+        
+    }
+    
+}

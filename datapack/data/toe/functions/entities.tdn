@@ -1,5 +1,5 @@
 @on compile
-@priority 20.0
+@priority 2.0
 
 
 define function player {
@@ -8,9 +8,10 @@ define function player {
     as @a at @s function this {
         set @s->toe.age += 1
         
-        for (var i = 0; i < POWERS.length; i++ ) {
-            var power = POWERS[i]
-            eval power.run()
-        }
+            
+        
+        eval Move.run(MOVES)
+        eval Power.run(POWERS)
+        
     }
 }

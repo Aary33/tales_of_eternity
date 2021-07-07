@@ -1,5 +1,5 @@
 @on compile
-@priority 31.0
+@priority 4.1
 
 # TODO: Class_Power
 # Change teams to tags
@@ -7,83 +7,56 @@
 # - switching powers
 
 define class Power {
-    public static final var TEAM_ID_NAMESPACE : string = "pwr"
-    public static final var DEFAULT_TEAM_COLOR : string = Color.WHITE
+    public static final var TAG_ID_NAMESPACE : string = "pwr"
     public static final var DEFAULT_BASE_SPEED : real = 0.150
     
-    # private static var id : string = ""
+    public static final var DRAGON_LORD : string = "dragon_lord"
+    
+    # public static final var DEFAULT_TEAM_COLOR : string = Color.WHITE
+    
     private var id : string
     private var displayName : text_component
-    private var teamID : string
-    private var teamColor : string
-    private var teamPrefix : text_component
-    private var teamSuffix : text_component
+    # private var teamID : string
+    # private var teamColor : string
+    # private var teamPrefix : text_component
+    # private var teamSuffix : text_component
     private var baseSpeed : real
     private var moves : list
     
-    private static makeTeamID(name : string) : string {
-        return TEAM_ID_NAMESPACE + "." + name
+    # private static makeTeamID(name : string) : string { return TEAM_ID_NAMESPACE + "." + name }
+    private static makeTagID(id : string) : string {
+        return TAG_ID_NAMESPACE + "." + id
     }
   
     public new(id : string) {
         eval this.id = id
         eval this.displayName = new text_component({"text":id})
-        eval this.teamID = makeTeamID(this.id)
-        eval this.teamColor = DEFAULT_TEAM_COLOR
-        eval this.teamPrefix = new text_component({"text":""})
-        eval this.teamSuffix = new text_component({"text":""})
+        # eval this.teamID = makeTeamID(this.id)
+        # eval this.teamColor = DEFAULT_TEAM_COLOR
+        # eval this.teamPrefix = new text_component({"text":""})
+        # eval this.teamSuffix = new text_component({"text":""})
         eval this.baseSpeed = DEFAULT_BASE_SPEED
         eval this.moves = []
     }
     
-    public getID() : string {
-       return this.id
-    }
-    public getDisplayName() : text_component {
-       return this.displayName
-    }
-    public getTeamID() : string {
-       return this.teamID
-    }
-    public getTeamColor() : string {
-       return this.teamColor
-    }
-    public getTeamPrefix() : text_component {
-       return this.teamPrefix
-    }
-    public getTeamSuffix() : text_component {
-       return this.teamSuffix
-    }
-    public getBaseSpeed() : real {
-       return this.baseSpeed
-    }
-    public hasWings() : boolean {
-       return false
-    }
+    public getID() : string { return this.id }
+    public getDisplayName() : text_component { return this.displayName }
+    public getTagID() : string { return makeTagID(this.id) }
+    public getBaseSpeed() : real { return this.baseSpeed }
+    public hasWings() : boolean { return false }
+    public setDisplayName(name : text_component) { eval this.displayName = name }
+    public setBaseSpeed(speed : real) { eval this.baseSpeed = speed }
     
-    public setDisplayName(name : text_component) {
-        eval this.displayName = name
-    }
-    public setTeamColor(color : string) {
-        eval this.teamColor = color
-    }
-    public setTeamPrefix(prefix : text_component) {
-        eval this.teamPrefix = prefix
-    }
-    public setTeamSuffix(suffix : text_component) {
-        eval this.teamSuffix = suffix
-    }
-    public setBaseSpeed(speed : real) {
-        eval this.baseSpeed = speed
-    }
+    # public getTeamID() : string { return this.teamID }
+    # public getTeamColor() : string { return this.teamColor }
+    # public getTeamPrefix() : text_component { return this.teamPrefix }
+    # public getTeamSuffix() : text_component { return this.teamSuffix }
+    # public setTeamColor(color : string) { eval this.teamColor = color }
+    # public setTeamPrefix(prefix : text_component) { eval this.teamPrefix = prefix }
+    # public setTeamSuffix(suffix : text_component) { eval this.teamSuffix = suffix }
     
-    
-    public getMoves() : list {
-        return this.moves
-    }
-    public getMove(index : int) : Move {
-        return this.moves[index]
-    }
+    public getMoves() : list { return this.moves }
+    public getMove(index : int) : Move { return this.moves[index] }
     public getMove(name : string) : Move {
         var index : int
         for (var i = 0; i < this.moves.length; i++) {
@@ -92,24 +65,12 @@ define class Power {
             }
         }
     }
-    public getMoveCount() : int {
-        return this.moves.length
-    }
-    public clearMoves() {
-        eval this.moves.clear()
-    }
-    public addMove(move : Move) {
-        eval this.moves.add(move)
-    }
-    public insertMove(move : Move, index : int) {
-        eval this.moves.insert(move, index)
-    }
-    public removeMove(index : int) {
-        eval this.moves.remove(index)
-    }
-    public removeMove(move : Move) {
-        return this.moves[this.moves.indexOf(move)]
-    }
+    public getMoveCount() : int { return this.moves.length }
+    public clearMoves() { eval this.moves.clear() }
+    public addMove(move : Move) { eval this.moves.add(move) }
+    public insertMove(move : Move, index : int) { eval this.moves.insert(move, index) }
+    public removeMove(index : int) { eval this.moves.remove(index) }
+    public removeMove(move : Move) { return this.moves[this.moves.indexOf(move)] }
     public removeMove(name : string) {
         for (var i = 0; i < this.moves.length; i++) {
             if (this.moves[i].getID().matches(name)) {
@@ -124,14 +85,33 @@ define class Power {
         }
     }
     
-    public run() {
-        define function switch {
-            
+    public static switch(powers : list, toPower : Power) {
+        for (var i = 0; i < powers.length; i++) {
+            var power = powers[i]
+            tag @s remove ${power.getTagID()}
         }
-        
-        if entity @s[team=${this.getTeamID()}]
-        function test {
-            say team!
+        tag @s add ${toPower.getTagID()}
+    }
+    
+    public static run(powers : list) {
+        for (var i = 0; i < powers.length; i++) {
+            var power = powers[i]
+            if entity @s[tag=${power.getTagID()}]
+            function ${new resource(power.getID() + "_hotbar")} {
+                for (var j = 0; j < power.getMoveCount(); j ++) {
+                    var move = power.getMove(j)
+                    if predicate ${is_slot_selected_predicates[j].getResource()}
+                    tag @s add ${move.getTagID()}
+                    
+                    unless predicate ${is_slot_selected_predicates[j].getResource()}
+                    tag @s remove ${move.getTagID()}
+                }
+            }
+            if entity @s[tag=${power.getTagID()}]
+            function ${new resource(power.getID() + "_run")} {
+                if (power.getID().matches(DRAGON_LORD)) {
+                }
+            }
         }
     }
 }

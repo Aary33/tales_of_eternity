@@ -1,0 +1,171 @@
+@on compile
+@priority 5.0
+
+define class Particle {
+    public static final var DUST = "minecraft:dust"
+    public static final var DUST_COLOR_TRANSITION = "minecraft:dust_color_transition"
+    
+    private var particle : string
+    private var speed : real
+    private var count : int
+    
+    private var firstColor : Color
+    private var secondColor : Color
+    private var size : real
+    
+    public new(particle : string, speed : real, count : int) {
+        eval this.particle = particle
+        eval this.speed = speed
+        eval this.count = count
+    }
+    
+    
+    public getParticle() : string { return this.particle }
+    public getSpeed() : real { return this.speed }
+    public getCount() : int { return this.count }
+    
+    public getFirstColor() : Color { return this.firstColor }
+    public getSecondColor() : Color { return this.secondColor }
+    public getSize() : real { return this.size }
+    
+    public setParticle( particle : string ) { eval this.particle = particle }
+    public setSpeed( speed : real ) { eval this.speed = speed }
+    public setCount( count : int ) { eval this.count = count }
+    
+    public setFirstColor(color : Color) { eval this.firstColor = color }
+    public setSecondColor(color : Color) { eval this.secondColor = color }
+    
+    public setFirstColor(red : real, green : real, blue : real) {
+        var color = new Color(red, green, blue)
+        eval this.firstColor = color
+    }
+    public setSecondColor(red : real, green : real, blue : real) {
+        var color = new Color(red, green, blue)
+        eval this.secondColor = color
+    }
+    
+    public setSize(size : real) { eval this.size = size }
+    
+    
+    public makeSecondaryArgs() : string {
+        var args = ""
+        if (getParticle().matches(DUST)) {
+            eval args = " " + getFirstColor().toCommand() + " " + getSize()
+        } else if (getParticle().matches(DUST_COLOR_TRANSITION)) {
+            eval args = " " + getFirstColor().toCommand() + " " + getSize() + " " + getSecondColor().toCommand()
+        } else {
+            eval args = ""
+        }
+        return args
+    }
+}
+
+define class ParticleCycle {
+    
+    public static final var CHANCE_ALWAYS = 1.0
+    public static final var CHANCE_NEVER = 0.0
+    public static final var CHANCE_LOW = 0.1
+    public static final var CHANCE_NORMAL = 0.25
+    public static final var CHANCE_HIGH = 0.5
+    
+    public static var CHANCE_RESOURCES = []
+    
+    public static final var PREDICATE_CHANCE_LOW = new resource(Game.NAMESPACE + ":" + "particle/particle_cycle/chance_low")
+    public static final var PREDICATE_CHANCE_NORMAL = new resource(Game.NAMESPACE + ":" + "particle/particle_cycle/chance_normal")
+    public static final var PREDICATE_CHANCE_HIGH = new resource(Game.NAMESPACE + ":" + "particle/particle_cycle/chance_high")
+    
+    public static final var DUST_COLOR_TRANSITION = "minecraft:dust_color_transition"
+    
+    private var unit : real
+    private var unitToRadian : real
+    private var cycles : int
+    
+    private var scale : real
+    private var y_velocity : real
+    private var offset : coordinates
+    
+    private var particle : Particle
+    
+    private var x : real
+    private var y : real
+    private var z : real
+    
+    public new(unit : real, scale : real, y_velocity : real, offset : coordinates, particle : Particle ) {
+        eval this.unit = unit
+        eval this.unitToRadian = Math.toRadians(this.unit)
+        eval this.cycles = (int) ((2.0 * Math.PI) / this.unitToRadian) 
+        
+        eval this.scale = scale
+        eval this.y_velocity = y_velocity
+        eval this.offset = offset
+        
+        eval this.particle = particle
+        
+    }
+    
+    public makeChanceResource(chance : real) : Resource {
+        var resourceEntry = null
+        for (var i = 0; i < ParticleCycle.CHANCE_RESOURCES.length; i++ ) {
+            if (ParticleCycle.CHANCE_RESOURCES[i].Chance == chance) {
+                eval resourceEntry = ParticleCycle.CHANCE_RESOURCES[i]
+            }
+        }
+        if (resourceEntry != null) {
+            return resourceEntry.Resource
+        } else {
+            var resource = new Resource(Game.NAMESPACE, "particle/particle_cycle", "chance" + ParticleCycle.CHANCE_RESOURCES.length, Resource.ENUM_PREDICATE)
+            var resourceEntry = {
+                Chance: chance,
+                Resource: resource
+            }
+            eval ParticleCycle.CHANCE_RESOURCES.add(resourceEntry)
+            return resource
+        }
+    }
+    
+    public draw(inverted : boolean, chance : real) {
+        var chance_predicate = makeChanceResource(chance).getResource()
+        
+        for(var i = 0; i < this.cycles; i++) {
+            eval x = this.scale * Math.sin(unitToRadian * i)
+            eval y = this.y_velocity
+            eval z = this.scale * Math.cos(unitToRadian * i)
+            
+            eval x = Math.round(x * 10000000.0) / 10000000.0
+            eval y = Math.round(y * 10000000.0) / 10000000.0
+            eval z = Math.round(z * 10000000.0) / 10000000.0
+            
+            var pos = coordinates<~ ~ ~>
+            .deriveMagnitude(this.x + this.offset.getMagnitude(Axis.X), Axis.X)
+            .deriveMagnitude(this.y + this.offset.getMagnitude(Axis.Y), Axis.Y)
+            .deriveMagnitude(this.z + this.offset.getMagnitude(Axis.Z), Axis.Z)
+            
+            
+            if (inverted == true) {
+                eval x = x * -1
+                eval z = z * -1
+            }
+            
+            function {
+                #${new resource("cycle_" + i)} 
+                var cycle = function {
+                    var secondaryArgs = particle.makeSecondaryArgs()
+                    
+                    var cmd = "particle " + particle.getParticle() + particle.makeSecondaryArgs() + " " + pos + " " +
+                    x + " " + y + " " + z + " " + particle.getSpeed() + " " + particle.getCount() + " normal"
+                    
+                    /${cmd}
+                    if (particle.getParticle().matches("minecraft:smoke")) {
+                    }
+                }
+                
+                if predicate $chance_predicate
+                function $cycle
+            }
+            
+        }
+    }
+    
+    
+    
+}
