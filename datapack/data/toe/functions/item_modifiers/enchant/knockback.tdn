@@ -1,0 +1,52 @@
+@on compile
+@priority 0.0
+
+var resource = itmmod_add_knockback
+eval File.out.writeData(
+    resource.getTridentDirectory() ,
+    JSON.stringify(
+        {
+            "function": "minecraft:set_enchantments",
+            "enchantments": {
+                "minecraft:knockback": 1
+            },
+            "add": true
+        },
+        true
+    )
+)
+var resource = itmmod_remove_knockback
+eval File.out.writeData(
+    resource.getTridentDirectory() ,
+    JSON.stringify(
+        {
+            "function": "minecraft:set_enchantments",
+            "enchantments": {
+                "minecraft:knockback": 0
+            },
+            "add": false
+        },
+        true
+    )
+)
+var resource = itmmod_add_knockback_with_fall
+eval File.out.writeData(
+    resource.getTridentDirectory() ,
+    JSON.stringify(
+        [
+            {
+                "function": "minecraft:set_enchantments",
+                "enchantments": {
+                    "minecraft:knockback": {
+                        "type": "minecraft:score",
+                        "target": "this",
+                        "score": Game.OBJ_FALL_DISTANCE,
+                        "scale": 0.2
+                    }
+                },
+                "add": false
+            }
+        ],
+        true
+    )
+)

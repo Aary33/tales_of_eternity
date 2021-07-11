@@ -1,0 +1,11 @@
+{
+    "parent": "minecraft:item/handheld_rod",
+    "textures": {
+        "layer0": "minecraft:item/stick"
+    },
+	
+    "overrides": [
+        {"predicate": {"custom_model_data":7466000}, "model": "toe:item/dragon_lord/dragon_fist"}
+        
+    ]
+}

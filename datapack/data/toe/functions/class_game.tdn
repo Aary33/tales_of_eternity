@@ -2,13 +2,31 @@
 @priority 5.2
 
 define class Color {
-    public static final var BLUE : string = "blue"
-    public static final var GREEN : string = "green"
-    public static final var PINK : string = "pink"
-    public static final var PURPLE : string = "purple"
-    public static final var RED : string = "red"
-    public static final var WHITE : string = "white"
-    public static final var YELLOW : string = "yellow"
+    public static final var TEXT_BLACK : string = "black"
+    public static final var TEXT_DARK_BLUE : string = "dark_blue"
+    public static final var TEXT_DARK_GREEN : string = "dark_green"
+    public static final var TEXT_DARK_AQUA : string = "dark_aqua"
+    public static final var TEXT_DARK_RED : string = "dark_red"
+    public static final var TEXT_DARK_PURPLE : string = "dark_purple"
+    public static final var TEXT_GOLD : string = "gold"
+    public static final var TEXT_GRAY : string = "gray"
+    public static final var TEXT_DARK_GRAY : string = "dark_gray"
+    public static final var TEXT_BLUE : string = "blue"
+    public static final var TEXT_GREEN : string = "green"
+    public static final var TEXT_AQUA : string = "aqua"
+    public static final var TEXT_RED : string = "red"
+    public static final var TEXT_LIGHT_PURPLE : string = "light_purple"
+    public static final var TEXT_YELLOW : string = "yellow"
+    public static final var TEXT_WHITE : string = "white"
+    
+    public static final var BOSSBAR_BLUE : string = "blue"
+    public static final var BOSSBAR_GREEN : string = "green"
+    public static final var BOSSBAR_PINK : string = "pink"
+    public static final var BOSSBAR_PURPLE : string = "purple"
+    public static final var BOSSBAR_RED : string = "red"
+    public static final var BOSSBAR_WHITE : string = "white"
+    public static final var BOSSBAR_YELLOW : string = "yellow"
+    
     
     private var red : real
     private var green : real
@@ -47,6 +65,38 @@ define class Game {
     public static final var MAX_HOTBAR_SLOTS = 9
     
     public static var PTR_TMP = pointer<#tmp->toe.var> 
+    
+    public static final var OBJ_AGE = "toe.age"
+    public static final var OBJ_GLOBAL_VARIABLE = "toe.var"
+    public static final var OBJ_CALLBACK = "toe.callback"
+    public static final var OBJ_LOOP = "toe.loop"
+    public static final var OBJ_BOSSBAR_ID = "toe.bar"
+    public static final var OBJ_SUCCESS = "toe.success"
+    
+    public static final var OBJ_SELECTED_SLOT = "toe.s.slot"
+    public static final var OBJ_FALL_DISTANCE = "toe.s.fall"
+    
+    public static final var OBJ_BURN = "toe.burn"
+    public static final var OBJ_COOLDOWN = "toe.cooldown"
+    public static final var OBJ_STAMINA = "toe.stamina"
+    
+    public static final var OBJ_METER_SPIRIT = "toe.m.spirit"
+    
+    public static var OBJ_UUID_LIST = [
+        "toe.uuid.0",
+        "toe.uuid.1",
+        "toe.uuid.2",
+        "toe.uuid.3"
+    ]
+    public static var OBJ_OWNER_UUID_LIST = [
+        "toe.owner.0",
+        "toe.owner.1",
+        "toe.owner.2",
+        "toe.owner.3"
+    ]
+    
+    public static final var TAG_BURN = "toe.burn"
+    public static final var TAG_FIERY_LAUNCH = "toe.launch.fiery"
     
     public static printLoadSuccess() {
         var message = new text_component(
@@ -131,4 +181,135 @@ define class Game {
         )
         tellraw @a $message
     }
+    public static setOwner(target : entity, source : entity) {
+        for (var i = 0; i < OBJ_UUID_LIST.length; i++) {
+            set $target->${OBJ_OWNER_UUID_LIST[i]} = $source->${OBJ_UUID_LIST[i]}
+        }
+    }
+    
+    public static isInteger(s : string) {
+        if(s.isEmpty()) return false
+        for(var i = 0; i < s.length; i++) {
+            if(i == 0 && s.substring(i, i + 1) == '-') {
+                if(s.length == 1) return false
+                else continue
+            }
+            if(!Character.isDigit(s.substring(i, i + 1))) return false
+        }
+        return true
+    }
+    
+    public static getSlotNBTPath(target : entity, slot : string) : nbt_path {
+        var path = nbt_path<{}>
+        if (slot.contains('.')) {
+            var slotType = slot.substring(0, slot.indexOf('.'))
+            var slotID = slot.substring(slot.indexOf('.') + 1, slot.length)
+            if (isInteger(slotID)) {
+                var slotNumber = Integer.parseInt(slotID)
+                if (slotType.matches("hotbar")) {
+                    var slotByte = (tag_byte) slotNumber
+                    eval path = nbt_path<Inventory[{Slot: $slotByte }]>
+                } else if (slotType.matches("inventory")) {
+                    eval slotNumber += 9
+                    var slotByte = (tag_byte) slotNumber
+                    eval path = nbt_path<Inventory[{Slot: $slotByte }]>
+                }
+            } else {
+                if (target.isPlayer()) {
+                    if (slotType.matches("armor")) {
+                        if (slotID.matches("head"))  eval path = nbt_path<Inventory[{Slot: 103b }]>
+                        if (slotID.matches("chest")) eval path = nbt_path<Inventory[{Slot: 102b }]>
+                        if (slotID.matches("legs"))  eval path = nbt_path<Inventory[{Slot: 101b }]>
+                        if (slotID.matches("feet"))  eval path = nbt_path<Inventory[{Slot: 100b }]>
+                    }
+                    if (slotType.matches("weapon")) {
+                        if (slotID.matches("mainhand"))  eval path = nbt_path<SelectedItem>
+                        if (slotID.matches("offhand"))   eval path = nbt_path<Inventory[{Slot: -106b }]>
+                    }
+                } else {
+                    log info "not player"
+                    log info slotType
+                    log info slotID
+                    if (slotType.matches("armor")) {
+                        if (slotID.matches("head"))  eval path = nbt_path<Equipment[0]>
+                        if (slotID.matches("chest")) eval path = nbt_path<Equipment[1]>
+                        if (slotID.matches("legs"))  eval path = nbt_path<Equipment[2]>
+                        if (slotID.matches("feet"))  eval path = nbt_path<Equipment[3]>
+                    }
+                    if (slotType.matches("weapon")) {
+                        if (slotID.matches("mainhand"))  eval path = nbt_path<HandItems[0]>
+                        if (slotID.matches("offhand"))   eval path = nbt_path<HandItems[1]>
+                    }
+                }
+            }
+        } else {
+            var slotType = slot
+            if (target.isPlayer()) {
+                if (slotType.matches("weapon")) eval path = nbt_path<SelectedItem>
+            } else {
+                if (slotType.matches("weapon")) eval path = nbt_path<HandItems[0]>
+            }
+        }
+        
+        return path
+    }
+    
+    public static dropItem(target : entity, slot : string, isPlayer : boolean) {
+        var path : nbt_path = getSlotNBTPath(target, slot)
+        var itemPtr = entity<@e[type=minecraft:item,tag=new,limit=1,distance=0..1]>
+        
+        if data entity $target $path
+        summon $ent_dropped_item ~ ~ ~
+        data modify entity $itemPtr Item set from entity $target $path
+    }
+    
+    public static run() {
+        
+        as @e[type=#toe:mobs,scores={$OBJ_BURN=1..}] at @s
+        function burn {
+            set @s->$OBJ_BURN -= 1
+            if entity @s[tag=!$TAG_BURN]
+            function start {
+                tag @s add $TAG_BURN
+                
+                at @s positioned ~ ~3 ~
+                summon $ent_burn
+            }
+            
+            if score @s $OBJ_BURN matches 0 
+            function end {
+                tag @s remove $TAG_BURN
+            }
+        }
+        as @e[type=#toe:mobs,tag=$TAG_FIERY_LAUNCH] at @s
+        function fiery_launch {
+            anchored eyes
+            positioned ^ ^ ^
+            function $f_draw_fiery_spiral
+            
+            if predicate ${pre_on_ground.getResource()}
+            unless predicate ${pre_entity_is_hurt.getResource()}
+            tag @s remove $TAG_FIERY_LAUNCH
+        }
+    }
 }
+
+define class Meter {
+    public static final var NAMESPACE = "m"
+    
+    private var id : string
+    private var name : string
+    private var objective : string
+    
+    public getName() { return this.name }
+    public getObjective() { return this.objective }
+    
+    public new(id : string, name : string) {
+        eval this.id = id
+        eval this.name = name
+        eval this.objective = Game.NAMESPACE + "." + NAMESPACE + "." + this.id
+        define objective ${this.objective} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":${getName() + " Meter"}}]
+    }
+}
+
+global var meter_spirit = new Meter("spirit", "Spirit")

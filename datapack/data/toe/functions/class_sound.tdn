@@ -2,31 +2,75 @@
 @priority 5.0
 
 define class Sound {
+    public static final var ORIGIN_AMBIENT : string = "ambient"
+    public static final var ORIGIN_BLOCK : string = "block"
+    public static final var ORIGIN_HOSTILE : string = "hostile"
+    public static final var ORIGIN_MASTER: string = "master"
+    public static final var ORIGIN_MUSIC : string = "music"
+    public static final var ORIGIN_NEUTRAL : string = "neutral"
+    public static final var ORIGIN_PLAYER : string = "player"
+    public static final var ORIGIN_RECORD : string = "record"
+    public static final var ORIGIN_VOICE : string = "voice"
+    public static final var ORIGIN_WEATHER : string = "weather"
+    
     private var resource : resource
+    private var origin : string
+    private var listeners : entity
+    private var position : coordinates
     private var volume : real
     private var pitch : real
     private var minVolume : real
     
     public new(resource : resource) {
         eval this.resource = resource
+        eval this.origin = ORIGIN_MASTER
+        eval this.listeners = entity<@a>
+        eval this.position = coordinates<~ ~ ~>
         eval this.volume = 1.0
         eval this.pitch = 1.0
         eval this.minVolume = 0.0
     }
+    public new(resource : resource, origin : string, listeners : entity, position : coordinates, volume : real, pitch : real, minVolume : real) {
+        eval this.resource = resource
+        eval this.origin = origin
+        eval this.listeners = listeners
+        eval this.position = position
+        eval this.volume = volume
+        eval this.pitch = pitch
+        eval this.minVolume = minVolume
+    }
     
     public getResource() : resource { return this.resource }
+    public getOrigin() : string { return this.origin }
+    public getListeners() : entity { return this.listeners }
+    public getPosition() : coordinates { return this.position }
     public getVolume() : real { return this.volume }
     public getPitch() : real { return this.pitch }
     public getMinVolume() : real { return this.minVolume }
     
+    public setOrigin(origin : string) { eval this.origin = origin }
+    public setListeners(listeners : entity) { eval this.listeners = listeners }
+    public setPosition(position : coordinates) { eval this.position = position }
     public setVolume(volume : real) { eval this.volume = volume }
     public setPitch(pitch : real) { eval this.pitch = pitch }
     public setMinVolume(minVolume : real) { eval this.minVolume = minVolume }
+    
+    public play() {
+        var cmd = "playsound " + getResource() + " " + getOrigin() + " " + getListeners() + " " + getPosition() + " " + getVolume() + " " + getPitch() + " " + getMinVolume()
+        /${cmd}
+    }
+    public stop() {
+        var cmd = "stopsound " + getListeners() + " " + getOrigin() + " " + getResource()
+        /${cmd}
+    }
 }
 
 define class SoundCycle {
     public static final var SOUND_NAMESPACE = "snd"
     public static var SOUND_CYCLES = []
+    public static var instanceCount : int = 0
+    
+    private var index : int
     
     private var name : string
     private var sound : Sound
@@ -37,21 +81,27 @@ define class SoundCycle {
         eval this.sound = sound
         eval this.loopTime = loopTime
         
+        eval this.index = instanceCount
+        eval instanceCount += 1
         eval SOUND_CYCLES.add(this)
     }
     
     public setName(name : string)  { eval this.name = name }
     public setSound(sound : Sound) { eval this.sound = sound }
     public setLoopTime(loopTime : int) { eval this.loopTime = loopTime }
+    public getIndex() : int { return this.index }
     public getName() : string { return this.name }
     public getSound() : Sound { return this.sound }
     public getLoopTime() : int { return this.loopTime }
     public getPlayTag() : string { return Game.NAMESPACE + "." + SOUND_NAMESPACE + "." + this.name }
     
+    
     public play(waitUntilNextCycle : boolean) {
         if (waitUntilNextCycle == false) {
             if entity @s[tag=!${getPlayTag()}]
-            playsound ${sound.getResource()} player @s ~ ~ ~ ${sound.getVolume()} ${sound.getPitch()} ${sound.getMinVolume()}
+            function {
+                eval getSound().play()
+            }
         }
         
         tag @s add ${getPlayTag()}
@@ -60,7 +110,9 @@ define class SoundCycle {
     public stop(waitUntilNextCycle : boolean) {
         if (waitUntilNextCycle == false) {
             if entity @s[tag=${getPlayTag()}]
-            stopsound @s player ${sound.getResource()}
+            function {
+                eval getSound().stop()
+            }
         }
         
         tag @s remove ${getPlayTag()}

@@ -4,25 +4,54 @@
 define class Particle {
     public static final var DUST = "minecraft:dust"
     public static final var DUST_COLOR_TRANSITION = "minecraft:dust_color_transition"
+    public static final var DUST_COLOR_TRANSITION = "minecraft:dust_color_transition"
+    public static var PRIORITY_FORCE = "force"
+    public static var PRIORITY_NORMAL = "normal"
+    
+    public static final var DEFAULT_PRIORITY = PRIORITY_NORMAL
+    public static final var DEFAULT_VIEWERS = entity<@a>
+    
     
     private var particle : string
     private var speed : real
     private var count : int
     
+    private var priority : string
+    private var viewers : entity
+    
     private var firstColor : Color
     private var secondColor : Color
     private var size : real
+    
     
     public new(particle : string, speed : real, count : int) {
         eval this.particle = particle
         eval this.speed = speed
         eval this.count = count
+        eval this.priority = DEFAULT_PRIORITY
+        eval this.viewers = DEFAULT_VIEWERS
+    }
+    public new(particle : string, speed : real, count : int, priority: string) {
+        eval this.particle = particle
+        eval this.speed = speed
+        eval this.count = count
+        eval this.priority = priority
+        eval this.viewers = DEFAULT_VIEWERS
+    }
+    public new(particle : string, speed : real, count : int, priority: string, viewers : entity) {
+        eval this.particle = particle
+        eval this.speed = speed
+        eval this.count = count
+        eval this.priority = priority
+        eval this.viewers = viewers
     }
     
     
     public getParticle() : string { return this.particle }
     public getSpeed() : real { return this.speed }
     public getCount() : int { return this.count }
+    public getPriority() : string { return this.priority }
+    public getViewers() : entity { return this.viewers }
     
     public getFirstColor() : Color { return this.firstColor }
     public getSecondColor() : Color { return this.secondColor }
@@ -31,6 +60,8 @@ define class Particle {
     public setParticle( particle : string ) { eval this.particle = particle }
     public setSpeed( speed : real ) { eval this.speed = speed }
     public setCount( count : int ) { eval this.count = count }
+    public setPriority( priority : string ) { eval this.priority = priority }
+    public setViewers( viewers : entity ) { eval this.viewers = viewers }
     
     public setFirstColor(color : Color) { eval this.firstColor = color }
     public setSecondColor(color : Color) { eval this.secondColor = color }
@@ -47,7 +78,12 @@ define class Particle {
     public setSize(size : real) { eval this.size = size }
     
     
-    public makeSecondaryArgs() : string {
+    
+    public getPrimaryArgs() : string {
+        return "" + getSpeed() + " " + getCount() + " " + getPriority() + " " + getViewers()
+    }
+    
+    public getSecondaryArgs() : string {
         var args = ""
         if (getParticle().matches(DUST)) {
             eval args = " " + getFirstColor().toCommand() + " " + getSize()
@@ -61,7 +97,7 @@ define class Particle {
 }
 
 define class ParticleCycle {
-    
+    public static final var MAX_DECIMAL_PLACE = 8
     public static final var CHANCE_ALWAYS = 1.0
     public static final var CHANCE_NEVER = 0.0
     public static final var CHANCE_LOW = 0.1
@@ -75,34 +111,39 @@ define class ParticleCycle {
     public static final var PREDICATE_CHANCE_HIGH = new resource(Game.NAMESPACE + ":" + "particle/particle_cycle/chance_high")
     
     public static final var DUST_COLOR_TRANSITION = "minecraft:dust_color_transition"
+    public static var instanceCount : int = 0
     
     private var unit : real
     private var unitToRadian : real
     private var cycles : int
     
-    private var scale : real
-    private var y_velocity : real
+    private var magnitude : real
+    private var perpendicularVelocity : real
     private var offset : coordinates
     
     private var particle : Particle
+    private var index : int
     
     private var x : real
     private var y : real
     private var z : real
     
-    public new(unit : real, scale : real, y_velocity : real, offset : coordinates, particle : Particle ) {
+    public new(unit : real, magnitude : real, perpendicularVelocity : real, offset : coordinates, particle : Particle ) {
         eval this.unit = unit
         eval this.unitToRadian = Math.toRadians(this.unit)
         eval this.cycles = (int) ((2.0 * Math.PI) / this.unitToRadian) 
         
-        eval this.scale = scale
-        eval this.y_velocity = y_velocity
+        eval this.magnitude = magnitude
+        eval this.perpendicularVelocity = perpendicularVelocity
         eval this.offset = offset
         
         eval this.particle = particle
         
+        eval this.index = instanceCount
+        eval instanceCount += 1
     }
     
+    public getIndex() : int { return this.index }
     public makeChanceResource(chance : real) : Resource {
         var resourceEntry = null
         for (var i = 0; i < ParticleCycle.CHANCE_RESOURCES.length; i++ ) {
@@ -122,45 +163,120 @@ define class ParticleCycle {
             return resource
         }
     }
+    public static roundToDecimalPlace(val : real, places : int) : real {
+        var divisor : real = Math.pow(10, places)
+        var calc = Math.round(val * divisor) / divisor
+        return calc
+    }
     
-    public draw(inverted : boolean, chance : real) {
+    public draw(plane : string, invertedMotion : boolean, chance : real, timed : boolean) {
         var chance_predicate = makeChanceResource(chance).getResource()
         
+        if (timed == true) {
+            set @s->${Game.OBJ_LOOP} = @s->${Game.OBJ_AGE}
+            set @s->${Game.OBJ_LOOP} %= $cycles
+        }
+        
+        var x_pos : real
+        var y_pos : real
+        var z_pos : real
+        
+        var x_mot : real
+        var y_mot : real
+        var z_mot : real
+        
         for(var i = 0; i < this.cycles; i++) {
-            eval x = this.scale * Math.sin(unitToRadian * i)
-            eval y = this.y_velocity
-            eval z = this.scale * Math.cos(unitToRadian * i)
-            
-            eval x = Math.round(x * 10000000.0) / 10000000.0
-            eval y = Math.round(y * 10000000.0) / 10000000.0
-            eval z = Math.round(z * 10000000.0) / 10000000.0
-            
-            var pos = coordinates<~ ~ ~>
-            .deriveMagnitude(this.x + this.offset.getMagnitude(Axis.X), Axis.X)
-            .deriveMagnitude(this.y + this.offset.getMagnitude(Axis.Y), Axis.Y)
-            .deriveMagnitude(this.z + this.offset.getMagnitude(Axis.Z), Axis.Z)
-            
-            
-            if (inverted == true) {
-                eval x = x * -1
-                eval z = z * -1
+            if (plane.matches("xy")) {
+                eval x = this.magnitude * Math.sin(unitToRadian * i)
+                eval y = this.magnitude * Math.cos(unitToRadian * i)
+                eval z = 0
+                
+                eval x = roundToDecimalPlace(x, MAX_DECIMAL_PLACE)
+                eval y = roundToDecimalPlace(y, MAX_DECIMAL_PLACE)
+                
+                eval x_mot = x
+                eval y_mot = y
+                eval z_mot = perpendicularVelocity
+                
+                if (invertedMotion == true) {
+                    eval x_mot = x_mot * -1
+                    eval y_mot = y_mot * -1
+                }
+            } else if (plane.matches("zy")) {
+                eval x = 0
+                eval y = this.magnitude * Math.cos(unitToRadian * i)
+                eval z = this.magnitude * Math.sin(unitToRadian * i)
+                
+                eval y = roundToDecimalPlace(y, MAX_DECIMAL_PLACE)
+                eval z = roundToDecimalPlace(z, MAX_DECIMAL_PLACE)
+                
+                eval x_mot = perpendicularVelocity
+                eval y_mot = y
+                eval z_mot = z
+                
+                if (invertedMotion == true) {
+                    eval y_mot = y_mot * -1
+                    eval z_mot = z_mot * -1
+                }
+            } else if (plane.matches("xz")) {
+                eval x = this.magnitude * Math.sin(unitToRadian * i)
+                eval y = 0
+                eval z = this.magnitude * Math.cos(unitToRadian * i)
+                
+                eval x = roundToDecimalPlace(x, MAX_DECIMAL_PLACE)
+                eval z = roundToDecimalPlace(z, MAX_DECIMAL_PLACE)
+                
+                eval x_mot = x
+                eval y_mot = perpendicularVelocity
+                eval z_mot = z
+                
+                if (invertedMotion == true) {
+                    eval x_mot = x_mot * -1
+                    eval z_mot = z_mot * -1
+                }
             }
             
-            function {
-                #${new resource("cycle_" + i)} 
-                var cycle = function {
-                    var secondaryArgs = particle.makeSecondaryArgs()
-                    
-                    var cmd = "particle " + particle.getParticle() + particle.makeSecondaryArgs() + " " + pos + " " +
-                    x + " " + y + " " + z + " " + particle.getSpeed() + " " + particle.getCount() + " normal"
-                    
-                    /${cmd}
-                    if (particle.getParticle().matches("minecraft:smoke")) {
+            eval x_pos = x + offset.getMagnitude(Axis.X)
+            eval y_pos = y + offset.getMagnitude(Axis.Y)
+            eval z_pos = z + offset.getMagnitude(Axis.Z)
+            
+            var pos = coordinates<~ ~ ~>
+            .deriveMagnitude(x_pos, Axis.X)
+            .deriveMagnitude(y_pos, Axis.Y)
+            .deriveMagnitude(z_pos, Axis.Z)
+            .deriveCoordinateType(offset.getCoordinateType(Axis.X))
+
+            
+            var motion = "" + x_mot + " " + y_mot + " " + z_mot
+            
+            var cmd = "particle " + particle.getParticle() + particle.getSecondaryArgs() + " " + pos + " " + motion  + " " + particle.getPrimaryArgs()
+            
+            function ${new resource("obj" + getIndex() + "_cycle" + i)} {
+                if (timed == false) {
+                    if (chance >= 1.0) {
+                        function timed_false_chance_false {
+                            /${cmd}
+                        }
+                    } else {
+                        if predicate $chance_predicate
+                        function timed_false_chance_true {
+                            /${cmd}
+                        }
+                    }
+                } else {
+                    if (chance >= 1.0) {
+                        if score @s ${Game.OBJ_LOOP} matches $i
+                        function timed_true_chance_false {
+                            /${cmd}
+                        }
+                    } else {
+                        if score @s ${Game.OBJ_LOOP} matches $i
+                        if predicate $chance_predicate
+                        function timed_true_chance_true {
+                            /${cmd}
+                        }
                     }
                 }
-                
-                if predicate $chance_predicate
-                function $cycle
             }
             
         }

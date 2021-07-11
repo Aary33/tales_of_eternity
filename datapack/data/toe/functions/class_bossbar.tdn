@@ -1,11 +1,10 @@
 @on compile
-@priority 4.3
+@priority 4.1
 
 
 define class Bossbar {
-    public static final var DEFAULT_COLOR : string = Color.WHITE
+    public static final var DEFAULT_COLOR : string = Color.BOSSBAR_WHITE
     public static final var DEFAULT_STYLE : string = Style.NOTCHED_10
-    public static final var DEFAULT_VALUE : int = 0
     public static final var DEFAULT_MAX : int = 1000
     public static final var DEFAULT_OBJECTIVE : string = "toe.var"
     
@@ -13,8 +12,6 @@ define class Bossbar {
     public var displayName : text_component
     public var color : string
     public var style : string
-    
-    public var value : int
     public var max : int
     public var objective : string
     
@@ -23,7 +20,6 @@ define class Bossbar {
         eval this.displayName = new text_component({"text":id})
         eval this.color = DEFAULT_COLOR
         eval this.style = DEFAULT_STYLE
-        eval this.value = DEFAULT_VALUE
         eval this.max = DEFAULT_MAX
         eval this.objective = DEFAULT_OBJECTIVE
     }
@@ -32,14 +28,12 @@ define class Bossbar {
     public getDisplayName() : text_component { return this.displayName }
     public getColor() : string { return this.color }
     public getStyle() : string { return this.style }
-    public getValue() : int { return this.value }
     public getMax() : int { return this.max }
     public getObjective() : string { return this.objective }
     
     public setDisplayName(name : text_component) { eval this.displayName = name }
     public setColor(color : string) { eval this.color = color }
     public setStyle(style : string) { eval this.style = style }
-    public setValue(value : int) { eval this.value = value }
     public setMax(max : int) { eval this.max = max }
     public setObjective(objective : string) { eval this.objective = objective }
     
@@ -54,134 +48,177 @@ define class Bossbar {
     public remove() {
         bossbar remove ${this.getResource()}
     }
+    public track() {
+        store result bossbar ${this.getResource()} value scoreboard players get @s ${this.getObjective()}
+    }
+    public setVisible(visibility : boolean) {
+        if (visibility == true) {
+            bossbar set ${this.getResource()} visible true
+        } else {
+            bossbar set ${this.getResource()} visible false
+        }
+    }
 }
 
-define class BossbarFamily : Bossbar {
-    public static final var ALLOCATED_BOSSBAR_COUNT : int = 100
-    public static final var PTR_BOSSBAR_COUNT : pointer = pointer<#bossbarSpiritCount->toe.bar> 
-    public static final var PTR_PLAYER_BOSSBAR_ID : pointer = pointer<@a->toe.bar> 
+define class BossbarFamily {
+    public static final var ALLOCATIONS : int = 100
+    public static final var PTR_ALLOCATIONS : pointer = pointer<#allocations->${Game.OBJ_BOSSBAR_ID}>
+    public static final var TAG_REFRESH : string = "toe.bar.refresh"
     
     public static var bossbarFamilies : list = []
     
-    private var allocatedBossbarCount : int
+    private var model : Bossbar
+    private var conditionTag : string
     
-    public getAllocatedBossbarCount() : int { return this.allocatedBossbarCount }
-    private var refreshBossbars = function(familiy : BossbarFamily) {
-        set $PTR_BOSSBAR_COUNT = 0
-        set $PTR_PLAYER_BOSSBAR_ID = -1
+    private var bossbars : list = []
+    
+    public new(model : Bossbar, allocations : int) {
+        eval this.model = model
+        eval this.conditionTag = ""
         
-        function refresh {
-            var tag : string = ${(string) PTR_PLAYER_BOSSBAR_ID.member}
-            tag @a[limit=1,sort=arbitrary,scores={toe.bar=-1}] add $tag
-            set @a[tag=$tag]->${PTR_PLAYER_BOSSBAR_ID.member} = $PTR_BOSSBAR_COUNT
+        for (var i = 0; i < ALLOCATIONS; i ++) {
+            var bossbar = new Bossbar("" + model.getID() + "." + i)
+            eval bossbar.setDisplayName(model.getDisplayName())
+            eval bossbar.setColor(model.getColor())
+            eval bossbar.setStyle(model.getStyle())
+            eval bossbar.setMax(model.getMax())
+            eval bossbar.setObjective(model.getObjective())
             
-            set $PTR_BOSSBAR_COUNT += 1
-            tag @a[tag=$tag] remove $tag
-            
-            unless score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} = ${Callback.PTR_PLAYER_COUNT.target} ${Callback.PTR_PLAYER_COUNT.member}
-            function /
+            eval bossbars.add(bossbar)
         }
         
-        for (var i = 0; i < familiy.getAllocatedBossbarCount(); i ++) {
-            var bossbar = familiy.makeBossbar(i)
-            
-            unless score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} matches $i..
-            function {
-                eval bossbar.remove()
+        
+        eval bossbarFamilies.add(this)
+    }
+    
+    public setConditionTag(tag : string) { eval this.conditionTag = tag }
+    
+    public getModel() : Bossbar { return this.model }
+    public getPointerAllocations() : pointer { return this.ptr_allocations }
+    public getConditionTag() : string { return this.conditionTag }
+    public getBossbar(index : int) : Bossbar {
+        return bossbars[index]
+    }
+    
+    public static var reallocateBossbarsOnPlayerChange = function() {
+        function reallocate_bossbars_on_player_change {
+            set @a->${Game.OBJ_BOSSBAR_ID} = -1
+            set $PTR_ALLOCATIONS = 0
+            function reassign {
+                tag @a[limit=1,sort=arbitrary,scores={${Game.OBJ_BOSSBAR_ID}=-1}] add $TAG_REFRESH
+                set @a[tag=$TAG_REFRESH]->${Game.OBJ_BOSSBAR_ID} = $PTR_ALLOCATIONS
+                tag @a[tag=$TAG_REFRESH] remove $TAG_REFRESH
+                
+                if entity @a[scores={${Game.OBJ_BOSSBAR_ID}=-1}]
+                set $PTR_ALLOCATIONS += 1
+                
+                if entity @a[scores={${Game.OBJ_BOSSBAR_ID}=-1}]
+                function /
             }
             
-            if score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} matches $i..
-            as @a[scores={toe.bar=$i}]
-            function {
-                eval bossbar.create()
+            function reallocate {
+                for (var i = 0; i < bossbarFamilies.length; i ++) {
+                    var family = bossbarFamilies[i]
+                    function ${new resource("family_" + family.getModel().getID())} {
+                        for (var j = 0; j < ALLOCATIONS; j ++) {
+                            var bossbar = family.getBossbar(j)
+                            function ${new resource("bossbar_" + j)} {
+                                unless score ${PTR_ALLOCATIONS.target} ${PTR_ALLOCATIONS.member} matches $j..
+                                function remove {
+                                    eval bossbar.remove()
+                                }
+                                
+                                if score ${PTR_ALLOCATIONS.target} ${PTR_ALLOCATIONS.member} matches $j..
+                                as @a[scores={${Game.OBJ_BOSSBAR_ID}=$j}]
+                                function create {
+                                    eval bossbar.create()
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            
         }
-    }
-    
-    public new(id : string) {
-        eval this.id = id
-        eval this.displayName = new text_component({"text":id})
-        eval this.color = Bossbar.DEFAULT_COLOR
-        eval this.style = Bossbar.DEFAULT_STYLE
-        eval this.value = Bossbar.DEFAULT_VALUE
-        eval this.max = Bossbar.DEFAULT_MAX
-        
-        eval this.allocatedBossbarCount = ALLOCATED_BOSSBAR_COUNT
-        eval Callback.addCallback(Callback.ENUM_PLAYER_COUNT_CHANGED, refreshBossbars, this)
-        eval BossbarFamily.bossbarFamilies.add(this)
-    }
-    public new(bossbar : Bossbar) {
-        eval this.id = bossbar.getID()
-        eval this.displayName = bossbar.getDisplayName()
-        eval this.color = bossbar.getColor()
-        eval this.style = bossbar.getStyle()
-        eval this.value = bossbar.getValue()
-        eval this.max = bossbar.getMax()
-        
-        eval this.allocatedBossbarCount = ALLOCATED_BOSSBAR_COUNT
-        eval Callback.addCallback(Callback.ENUM_PLAYER_COUNT_CHANGED, refreshBossbars())
-        eval BossbarFamily.bossbarFamilies.add(this)
-    }
-    
-    
-    public makeBossbar(index : int) : Bossbar {
-        var bossbar = new Bossbar(this.getID() + "." + index)
-        
-        eval bossbar.setDisplayName(this.getDisplayName())
-        eval bossbar.setColor(this.getColor())
-        eval bossbar.setStyle(this.getStyle())
-        eval bossbar.setValue(this.getValue())
-        eval bossbar.setMax(this.getMax())
-        eval bossbar.setObjective(this.getObjective())
-        
-        return bossbar
     }
     
     public static track() {
-        for (var i = 0; i < bossbarFamilies.length; i ++) {
-            var family = bossbarFamilies[i]
-            for (var j = 0; j < family.getAllocatedBossbarCount(); j ++) {
-                var bossbar = family.makeBossbar(j)
-                if score ${PTR_BOSSBAR_COUNT.target} ${PTR_BOSSBAR_COUNT.member} matches $j..
-                as @a[scores={toe.bar=$j}]
-                store result bossbar ${bossbar.getResource()} value scoreboard players get @s ${family.objective}
-                
+        function track {
+            for (var i = 0; i < bossbarFamilies.length; i ++) {
+                var family = bossbarFamilies[i]
+                function ${new resource("family_" + family.getModel().getID())} {
+                    for (var j = 0; j < ALLOCATIONS; j ++) {
+                        var bossbar = family.getBossbar(j)
+                        function ${new resource("bossbar_" + j)} {
+                            if score ${PTR_ALLOCATIONS.target} ${PTR_ALLOCATIONS.member} matches $j..
+                            as @a[scores={${Game.OBJ_BOSSBAR_ID}=$j}]
+                            function {
+                                eval bossbar.track()
+                            }
+                        }
+                    }
+                }
             }
         }
     }
     
-    public createBossbars() {
-        for (var i = 0; i < this.getAllocatedBossbarCount(); i ++) {
-            var bossbar = this.makeBossbar(i)
-            eval bossbar.create()
-        }
-    }
-        
-    public removeBossbars() {
-        for (var i = 0; i < this.getAllocatedBossbarCount(); i ++) {
-            var bossbar = this.makeBossbar(i)
-            eval bossbar.remove()
+    public static var updateVisibility = function() {
+        function {
+            for (var i = 0; i < bossbarFamilies.length; i ++) {
+                var family = bossbarFamilies[i]
+                function ${new resource("family_" + family.getModel().getID())} {
+                    if (!family.getConditionTag().matches("")) {
+                        for (var j = 0; j < ALLOCATIONS; j ++) {
+                            var bossbar = family.getBossbar(j)
+                            function ${new resource("bossbar_" + j)} {
+                                if score ${PTR_ALLOCATIONS.target} ${PTR_ALLOCATIONS.member} matches $j..
+                                as @s[scores={${Game.OBJ_BOSSBAR_ID}=$j}]
+                                function set_visibility {
+                                    if entity @s[tag=${family.getConditionTag()}]
+                                    function set_visible_true {
+                                        eval bossbar.setVisible(true)
+                                    }
+                                    unless entity @s[tag=${family.getConditionTag()}]
+                                    function set_visible_false {
+                                        eval bossbar.setVisible(false)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
-    public override create() {
-        set ${PTR_BOSSBAR_COUNT} = 0
-        
-        eval this.removeBossbars()
-        eval this.createBossbars()
-    }
-    public override remove() {
-        eval this.removeBossbars()
-    }
     
     public static uninstall() {
-        for (var i = 0; i < bossbarFamilies.length; i ++) {
-            for (var j = 0; j < bossbarFamilies[i].getAllocatedBossbarCount(); j ++) {
-                var bossbar = bossbarFamilies[i].makeBossbar(j)
-                eval bossbar.remove()
+        function uninstall {
+            for (var i = 0; i < bossbarFamilies.length; i ++) {
+                var family = bossbarFamilies[i]
+                for (var j = 0; j < ALLOCATIONS; j ++) {
+                    var bossbar = family.getBossbar(j)
+                    eval bossbar.remove()
+                }
             }
         }
     }
 }
 
+var bossbar_spirit = new Bossbar("spirit")
+eval bossbar_spirit.setDisplayName(
+    new text_component({
+        "text" : "Spirit",
+        "color" : Color.TEXT_GOLD,
+        "bold" : true
+    })
+)
+eval bossbar_spirit.setColor(Color.BOSSBAR_RED)
+eval bossbar_spirit.setStyle(Style.NOTCHED_10)
+eval bossbar_spirit.setObjective(Game.OBJ_METER_SPIRIT)
+global var bossbarFamily_spirit = new BossbarFamily(bossbar_spirit, 100)
+eval bossbarFamily_spirit.setConditionTag(pwr_dragon_lord.getTagID())
+
+
+eval Callback.addCallback(Callback.ENUM_PLAYER_COUNT_CHANGED, BossbarFamily.reallocateBossbarsOnPlayerChange)
+eval Callback.addCallback(Callback.ENUM_PLAYER_CHANGED_POWERS, BossbarFamily.updateVisibility)
+eval Callback.addCallback(Callback.ENUM_PLAYER_COUNT_CHANGED, BossbarFamily.updateVisibility)

@@ -1,0 +1,53 @@
+@on compile
+@priority 4.4
+
+define item itm_dragon_lord_head minecraft:player_head {
+    default name [
+        "",
+        { "text" : "Dragon Lord Head", "color" : "yellow", "italic":false}
+        
+    ]
+    default nbt {
+        HideFlags: 31,
+        SkullOwner:{
+            Id:[
+                I;-1448072744,
+                -533902107,
+                -1885220310,
+                -2016695775
+            ],
+            Properties:{
+                textures:[
+                    {
+                        Value:"eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTZjMDgwZDg0MjFjYThjNTU5ZDEyYzIzMjhmMWI4OWM4MmZhMGY1YjY5OTYwMjIxYjg2MTNiYjhkOTU4ZDUifX19"
+                    }
+                ]
+            }
+        }
+    }
+    on dropped function dropped {
+        var droppedItem = entity<@e[type=minecraft:item,limit=1,sort=nearest,nbt={Item:${this.getSlotNBT()}}]>
+        as $droppedItem kill @s
+    }
+}
+
+define item itm_dragon_punch_fist minecraft:stick#7466000{
+    default name [
+        "",
+        { "text" : "Dragon Lord Fist", "color" : "yellow", "italic":false}
+        
+    ]
+    default nbt {
+        HideFlags: 31
+    }
+    on dropped function dropped {
+        var droppedItem = entity<@e[type=minecraft:item,limit=1,sort=nearest,nbt={Item:${this.getSlotNBT()}}]>
+        as $droppedItem kill @s
+    }
+}
+define function give/dragon_lord_head {
+    give @s $itm_dragon_lord_head
+}
+define function give/dragon_punch_fist {
+    give @s $itm_dragon_punch_fist
+}

@@ -3,16 +3,24 @@
 
 
 define class Callback {
+    public static final var GLOBAL : string = "global"
+    public static final var LOCAL : string = "local"
+    
     public static final var ENUM_PLAYER_COUNT_CHANGED = 0
     public static final var ENUM_PLAYER_IS_SNEAKING = 1
     public static final var ENUM_PLAYER_JUMPED = 2
     public static final var ENUM_PLAYER_JUMP_HEIGHT_REACHED = 3
     public static final var ENUM_PLAYER_ON_GROUND = 4
     public static final var ENUM_PLAYER_LANDED = 5
+    public static final var ENUM_PLAYER_CHANGED_POWERS = 6
+    public static final var ENUM_PRE_PLAYER_CHANGED_HOTBAR_SLOT = 7
+    public static final var ENUM_POST_PLAYER_CHANGED_HOTBAR_SLOT = 8
+    public static final var ENUM_PLAYER_INVENTORY_CHANGED = 9
     
     public static final var TAG_JUMPED = "toe.s.jumped"
     
     public static final var PTR_PLAYER_COUNT = pointer<#playerCount->toe.var> 
+    
     public static final var PTR_PLAYER_COUNT_CHANGED = pointer<#playerCountChanged->toe.callback> 
     public static final var PTR_TMP_PLAYER_COUNT_CHANGED = pointer<#tmpPlayerCountChanged->toe.callback> 
 
@@ -21,19 +29,14 @@ define class Callback {
     public static final var PTR_PLAYER_SNEAK_SINCE_PRESSED = pointer<@s->toe.s.sneak.p.-> 
     public static final var PTR_PLAYER_JUMP_TRIGGER = pointer<@s->toe.s.jump> 
     public static final var PTR_FALL_DISTANCE = pointer<@s->toe.s.fall>
-    public static final var PTR_ON_GROUND = pointer<@s->toe.s.ground> 
+    public static final var PTR_ON_GROUND = pointer<@s->toe.s.ground>
+    
     
     private static var callbacks : list = []
     
     public static addCallback(callback : int, f : function, data) {
-        if (callback == ENUM_PLAYER_COUNT_CHANGED) {
-            var args = { Callback: callback , Function: f , Data : data}
-            eval callbacks.add(args)
-        } 
-        else {
-            var args = { Callback: callback , Function: f }
-            eval callbacks.add(args)
-        }
+        var args = { Callback: callback , Function: f , Data : data}
+        eval callbacks.add(args)
     }
     
     private static playerCountChanged() {
@@ -67,7 +70,8 @@ define class Callback {
         function ${new resource("trigger_" + ENUM_PLAYER_IS_SNEAKING)} {
             for (var i = 0; i < callbacks.length; i ++) {
                 if (callbacks[i].Callback == ENUM_PLAYER_IS_SNEAKING) {
-                    eval callbacks[i].Function()
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
                 }
             }
             set ${Callback.PTR_PLAYER_SNEAK_PRESSED} += 1
@@ -81,7 +85,8 @@ define class Callback {
             tag @s add ${Callback.TAG_JUMPED}
             for (var i = 0; i < callbacks.length; i ++) {
                 if (callbacks[i].Callback == ENUM_PLAYER_JUMPED) {
-                    eval callbacks[i].Function()
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
                 }
             }
             set ${PTR_PLAYER_JUMP_TRIGGER} = 0
@@ -98,28 +103,30 @@ define class Callback {
             tag @s remove ${Callback.TAG_JUMPED}
             for (var i = 0; i < callbacks.length; i ++) {
                 if (callbacks[i].Callback == ENUM_PLAYER_JUMP_HEIGHT_REACHED) {
-                    eval callbacks[i].Function()
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
                 }
             }
         }
     }
     
     private static playerOnGround() {
-        if predicate ${pre_player_on_ground.getResource()}
+        if predicate ${pre_on_ground.getResource()}
         function ${new resource("trigger_" + ENUM_PLAYER_ON_GROUND)} {
             for (var i = 0; i < callbacks.length; i ++) {
                 if (callbacks[i].Callback == ENUM_PLAYER_ON_GROUND) {
-                    eval callbacks[i].Function()
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
                 }
             }
         }
     }
     private static playerLanded() {
         
-        unless predicate ${pre_player_on_ground.getResource()}
+        unless predicate ${pre_on_ground.getResource()}
         set $PTR_ON_GROUND = 0
         
-        if predicate ${pre_player_on_ground.getResource()}
+        if predicate ${pre_on_ground.getResource()}
         if score ${PTR_ON_GROUND.target} ${PTR_ON_GROUND.member} matches 0
         function ${new resource("trigger_" + ENUM_PLAYER_LANDED)} {
             for (var i = 0; i < callbacks.length; i ++) {
@@ -132,18 +139,107 @@ define class Callback {
         }
     }
     
-    public static run() {
-        function global {
-            eval playerCountChanged()
-        }
-        as @a at @s function local {
-            eval playerIsSneaking()
-            eval playerJumped()
-            eval playerJumpHeightReached()
-            eval playerOnGround()
-            eval playerLanded()
+    private static playerChangedPowers() {
+        
+        var trigger = function() {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_CHANGED_POWERS) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+            set $PTR_ON_GROUND = 1
         }
         
+        for (var i = 0; i < Power.powers.length; i ++) {
+            var power = Power.powers[i]
+            if entity @s[tag=${power.getSwapTagID()}]
+            function ${new resource("swap_to_" + power.getID())} {
+                eval power.swap()
+                tag @s remove ${power.getSwapTagID()}
+                eval trigger()
+            }
+            
+        }
+        if entity @s[tag=${Power.getSwapNoneTag()}]
+        function swap_to_none {
+            eval Power.swapToNone()
+            tag @s remove ${Power.getSwapNoneTag()}
+            eval trigger()
+        }
+    }
+    
+    private static playerPreChangedHotbarSlot() {
+        var trigger = function {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PRE_PLAYER_CHANGED_HOTBAR_SLOT) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+        }
+        
+        for (var i = 0; i < is_slot_selected_predicates.length; i++) {
+            if predicate ${is_slot_selected_predicates[i].getResource()}
+            unless score @s ${Game.OBJ_SELECTED_SLOT} matches $i
+            function ${new resource("pre_to_slot" + i)} {
+                title @s actionbar [""]
+                function $trigger
+            }
+        }
+    }
+    private static playerPostChangedHotbarSlot() {
+        var trigger = function {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_POST_PLAYER_CHANGED_HOTBAR_SLOT) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+        }
+        
+        for (var i = 0; i < is_slot_selected_predicates.length; i++) {
+            if predicate ${is_slot_selected_predicates[i].getResource()}
+            unless score @s ${Game.OBJ_SELECTED_SLOT} matches $i
+            function ${new resource("post_to_slot" + i)} {
+                function $trigger
+                set $PTR_PLAYER_SNEAK_PRESSED = 0
+                set @s->${Game.OBJ_SELECTED_SLOT} = $i
+            }
+        }
+    }
+    private static playerInventoryChanged() {
+        if entity @s[advancements={${adv_inventory_changed.getResource()}=true}]
+        function ${new resource("trigger_" + ENUM_PLAYER_INVENTORY_CHANGED)} {
+            for (var i = 0; i < callbacks.length; i ++) {
+                if (callbacks[i].Callback == ENUM_PLAYER_INVENTORY_CHANGED) {
+                    var data = callbacks[i].Data
+                    eval callbacks[i].Function(data)
+                }
+            }
+            advancement revoke @s only ${adv_inventory_changed.getResource()}
+        }
+    }
+    
+    public static run(as : string) {
+        if (as.matches(GLOBAL)) {
+            function global {
+                eval playerCountChanged()
+            }
+        }
+        if (as.matches(LOCAL)) {
+            function local {
+                eval playerIsSneaking()
+                eval playerJumped()
+                eval playerJumpHeightReached()
+                eval playerOnGround()
+                eval playerLanded()
+                eval playerChangedPowers()
+                eval playerPreChangedHotbarSlot()
+                eval playerPostChangedHotbarSlot()
+                eval playerInventoryChanged()
+            }
+        }
     }
     
 }

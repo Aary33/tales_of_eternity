@@ -1,50 +1,131 @@
 @on compile
-@priority 4.1
+@priority 4.2
 
 # TODO: Class_Power
-# Change teams to tags
-# Add run sequence to power
-# - switching powers
+# Make swapping powers clean move tags
+# - clears move tags and status effects
 
 define class Power {
     public static final var TAG_ID_NAMESPACE : string = "pwr"
+    public static final var MAX_MOVES_PER_POWER : int = Game.MAX_HOTBAR_SLOTS - 1
+    public static final var OBJ_CYCLE : string = "cycle"
+    public static final var SUBTAG_TOGGLE : string = "_toggle"
+    public static final var SUBTAG_TOGGLE_FOUND : string = "found"
+    public static final var SUBTAG_STORE : string = "_store"
+    public static final var SUBTAG_SWAP : string = "_swap"
+    public static final var SUBTAG_SWAP_NONE : string = "none"
     public static final var DEFAULT_BASE_SPEED : real = 0.150
+    public static final var TOGGLE_ROTATION_RANGE : list = [-90.0, -89.0]
+    public static final var DEFAULT_SOUND : Sound = new Sound(resource<minecraft:block.beacon.power_select>, Sound.ORIGIN_PLAYER, entity<@s>, coordinates<~ ~ ~>, 0.8, 1.1, 1.0)
+    public static final var TOGGLE_TITLE_TIMES : list = [0, 20, 15]
+    public static final var DEACTIVATE_SOUND : Sound = new Sound(resource<minecraft:block.beacon.deactivate>, Sound.ORIGIN_PLAYER, entity<@s>, coordinates<~ ~ ~>, 0.8, 1.1, 1.0)
+    public static final var DEACTIVATE_TITLE = new text_component({
+        "text" : "",
+        "color" : Color.TEXT_WHITE,
+        "bold" : false
+    })
+    public static final var DEACTIVATE_SUBTITLE = new text_component({
+        "text" : "POWERS DEACTIVATED",
+        "color" : Color.TEXT_RED,
+        "bold" : false
+    })
+    public static final var TOGGLE_ACTIONBAR_MESSAGE = new text_component([
+            {
+                "text" : "Look ",
+                "color" : Color.TEXT_LIGHT_PURPLE,
+                "bold" : true,
+                "italic" : false
+            },
+            {
+                "text" : "UP",
+                "color" : Color.TEXT_AQUA,
+                "bold" : true,
+                "italic" : false
+            },
+            {
+                "text" : " to toggle ",
+                "color" : Color.TEXT_LIGHT_PURPLE,
+                "bold" : true,
+                "italic" : false
+            },
+            {
+                "text" : "POWER(S)",
+                "color" : Color.TEXT_YELLOW,
+                "bold" : true,
+                "italic" : false
+            }
+        ])
     
     public static final var DRAGON_LORD : string = "dragon_lord"
+    
+    public static var powers : list = []
     
     # public static final var DEFAULT_TEAM_COLOR : string = Color.WHITE
     
     private var id : string
     private var displayName : text_component
+    private var lore : text_component
+    private var sound : Sound
     # private var teamID : string
     # private var teamColor : string
     # private var teamPrefix : text_component
     # private var teamSuffix : text_component
     private var baseSpeed : real
     private var moves : list
+    private var hotbarOffset : int
     
     # private static makeTeamID(name : string) : string { return TEAM_ID_NAMESPACE + "." + name }
     private static makeTagID(id : string) : string {
-        return TAG_ID_NAMESPACE + "." + id
+        return Game.NAMESPACE + "." + TAG_ID_NAMESPACE + "." + id
     }
-  
+    private static makeStoreTagID(id : string) : string {
+        return Game.NAMESPACE + "." + SUBTAG_STORE + "." + id
+    }
+    private static makeSwapTagID(id : string) : string {
+        return Game.NAMESPACE + "." + SUBTAG_SWAP + "." + id
+    }
+    public static getSwapNoneTag() : string{
+        return makeSwapTagID(SUBTAG_SWAP_NONE)
+    }
+    public static makeToggleTag() : string {
+        return Game.NAMESPACE + "." + SUBTAG_TOGGLE
+    }
+    public static makeToggleFoundTag() : string {
+        return Game.NAMESPACE + "." + SUBTAG_TOGGLE + "." + SUBTAG_TOGGLE_FOUND
+    }
+    public static getCycleObjective() : string {
+        return Game.NAMESPACE + "." + TAG_ID_NAMESPACE + "." + OBJ_CYCLE
+    }
     public new(id : string) {
         eval this.id = id
-        eval this.displayName = new text_component({"text":id})
+        eval this.displayName = new text_component({"text":""})
+        eval this.lore = new text_component({"text":""})
+        eval this.sound = DEFAULT_SOUND
         # eval this.teamID = makeTeamID(this.id)
         # eval this.teamColor = DEFAULT_TEAM_COLOR
         # eval this.teamPrefix = new text_component({"text":""})
         # eval this.teamSuffix = new text_component({"text":""})
         eval this.baseSpeed = DEFAULT_BASE_SPEED
         eval this.moves = []
+        eval this.hotbarOffset = 0
+        
+        eval Power.powers.add(this)
     }
     
     public getID() : string { return this.id }
     public getDisplayName() : text_component { return this.displayName }
+    public getLore() : text_component { return this.lore }
+    public getSound() : Sound { return this.sound }
     public getTagID() : string { return makeTagID(this.id) }
+    public getStoreTagID() : string { return makeStoreTagID(this.id) }
+    public getSwapTagID() : string { return makeSwapTagID(this.id) }
     public getBaseSpeed() : real { return this.baseSpeed }
+    public getHotbarOffset() : int { return this.hotbarOffset }
+    
     public hasWings() : boolean { return false }
     public setDisplayName(name : text_component) { eval this.displayName = name }
+    public setLore(lore : text_component) { eval this.lore = lore }
+    public setSound(sound : Sound) { eval this.sound = sound }
     public setBaseSpeed(speed : real) { eval this.baseSpeed = speed }
     
     # public getTeamID() : string { return this.teamID }
@@ -56,18 +137,23 @@ define class Power {
     # public setTeamSuffix(suffix : text_component) { eval this.teamSuffix = suffix }
     
     public getMoves() : list { return this.moves }
+    public getMoveCount() : int { return this.moves.length }
     public getMove(index : int) : Move { return this.moves[index] }
     public getMove(name : string) : Move {
         var index : int
-        for (var i = 0; i < this.moves.length; i++) {
-            if (this.moves[i].getID().matches(name)) {
-                return this.moves[i]
+        for (var i = 0; i < getMoveCount(); i++) {
+            if (getMoves()[i].getID().matches(name)) {
+                return getMoves()[i]
             }
         }
     }
-    public getMoveCount() : int { return this.moves.length }
     public clearMoves() { eval this.moves.clear() }
-    public addMove(move : Move) { eval this.moves.add(move) }
+    public addMove(move : Move) {
+        var totalUsedHotbarSlots = getHotbarOffset() + getMoveCount()
+        if (totalUsedHotbarSlots < MAX_MOVES_PER_POWER && totalUsedHotbarSlots >= 0) {
+            eval this.moves.add(move)
+        }
+    }
     public insertMove(move : Move, index : int) { eval this.moves.insert(move, index) }
     public removeMove(index : int) { eval this.moves.remove(index) }
     public removeMove(move : Move) { return this.moves[this.moves.indexOf(move)] }
@@ -85,33 +171,216 @@ define class Power {
         }
     }
     
-    public static switch(powers : list, toPower : Power) {
+    public setHotbarOffset(hotbarOffset : int) {
+        var totalUsedHotbarSlots = hotbarOffset + getMoveCount()
+        if (totalUsedHotbarSlots < MAX_MOVES_PER_POWER && totalUsedHotbarSlots >= 0) {
+            eval this.hotbarOffset = hotbarOffset
+        } else {
+            eval this.hotbarOffset = 0
+        }
+    }
+    public giveItems() {
+        for (var i = 0; i < getMoveCount(); i++) {
+            var move = getMoves()[i]
+            var slot = getHotbarOffset() + i
+            eval move.giveItem( "hotbar." + slot, 1, false)
+            
+        }
+    }
+    public static swapToNone() {
         for (var i = 0; i < powers.length; i++) {
             var power = powers[i]
             tag @s remove ${power.getTagID()}
+            for (var j = 0; j < power.getMoveCount(); j++) {
+                var move = power.getMoves()[j]
+                eval move.removeItem()
+            }
         }
-        tag @s add ${toPower.getTagID()}
+    }
+    public swap() {
+        eval swapToNone()
+        tag @s add ${this.getTagID()}
+        eval giveItems()
     }
     
-    public static run(powers : list) {
+    public static toggle() {
+        define objective ${getCycleObjective()} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text": "Power Cycling"}]
+        
+        if predicate ${is_slot_selected_predicates[is_slot_selected_predicates.length - 1].getResource()}
+        function actionbar {
+            title @s actionbar ${TOGGLE_ACTIONBAR_MESSAGE}
+        }
+        
+        unless entity @s[tag=${makeToggleTag()}]
+        if entity @s[x_rotation=${TOGGLE_ROTATION_RANGE[0]}..${TOGGLE_ROTATION_RANGE[1]}]
+        if predicate ${is_slot_selected_predicates[is_slot_selected_predicates.length - 1].getResource()}
+        function toggle_on {
+            function search {
+                for (var i = 0; i < powers.length; i++) {
+                    unless entity @s[tag=${makeToggleFoundTag()}]
+                    if score @s ${getCycleObjective()} matches ${i}
+                    if entity @s[tag=${powers[i].getStoreTagID()}]
+                    function ${new resource(powers[i].getID() + "_swap")} {
+                        tag @s add ${makeToggleFoundTag()}
+                        eval powers[i].swap()
+                        title @s times ${TOGGLE_TITLE_TIMES[0]} ${TOGGLE_TITLE_TIMES[1]} ${TOGGLE_TITLE_TIMES[2]}
+                        title @s subtitle ${new text_component([powers[i].getLore()])}
+                        title @s title ${new text_component([powers[i].getDisplayName()])}
+                        eval powers[i].getSound().play()
+                    }
+                }
+                
+                unless entity @s[tag=${makeToggleFoundTag()}]
+                if score @s ${getCycleObjective()} matches ${powers.length}
+                function none_swap {
+                    tag @s add ${makeToggleFoundTag()}
+                    eval swapToNone()
+                    title @s times ${TOGGLE_TITLE_TIMES[0]} ${TOGGLE_TITLE_TIMES[1]} ${TOGGLE_TITLE_TIMES[2]}
+                    title @s subtitle ${DEACTIVATE_SUBTITLE}
+                    title @s title ${DEACTIVATE_TITLE}
+                    eval DEACTIVATE_SOUND.play()
+                }
+                
+                
+                unless entity @s[tag=${makeToggleFoundTag()}]
+                if score @s ${getCycleObjective()} matches ${powers.length + 1}
+                function restart_cycle {
+                    set @s->${getCycleObjective()} = -1
+                }
+                
+                set @s->${getCycleObjective()} += 1
+                
+                unless entity @s[tag=${makeToggleFoundTag()}]
+                function /
+            }
+            tag @s remove ${makeToggleFoundTag()}
+            tag @s add ${makeToggleTag()}
+        }
+        unless entity @s[x_rotation=${TOGGLE_ROTATION_RANGE[0]}..${TOGGLE_ROTATION_RANGE[1]}]
+        if entity @s[tag=${makeToggleTag()}]
+        function toggle_off {
+            tag @s remove ${makeToggleTag()}
+        }
+        
+    }
+    
+    public static run() {
         for (var i = 0; i < powers.length; i++) {
             var power = powers[i]
-            if entity @s[tag=${power.getTagID()}]
-            function ${new resource(power.getID() + "_hotbar")} {
-                for (var j = 0; j < power.getMoveCount(); j ++) {
-                    var move = power.getMove(j)
-                    if predicate ${is_slot_selected_predicates[j].getResource()}
-                    tag @s add ${move.getTagID()}
-                    
-                    unless predicate ${is_slot_selected_predicates[j].getResource()}
-                    tag @s remove ${move.getTagID()}
+            var setMove = function(power : Power) {
+                if entity @s[tag=${power.getTagID()}]
+                function ${new resource(power.getID() + "_hotbar")} {
+                    for (var j = 0; j < power.getMoveCount(); j ++) {
+                        var move = power.getMove(j)
+                        var absoluteSlot = power.getHotbarOffset() + j
+                        unless predicate ${is_slot_selected_predicates[absoluteSlot].getResource()}
+                        function ${new resource(move.getID() + "_disable_move")} {
+                            tag @s remove ${move.getTagID()}
+                        }
+                        if predicate ${is_slot_selected_predicates[absoluteSlot].getResource()}
+                        function ${new resource(move.getID() + "_enable_move")} {
+                            tag @s add ${move.getTagID()}
+                        }
+                        
+                    }
                 }
             }
+            eval Callback.addCallback(Callback.ENUM_POST_PLAYER_CHANGED_HOTBAR_SLOT, setMove, power)
+            
+            if entity @s[tag=${power.getTagID()}]
+            function ${new resource(power.getID() + "_item_handler")} {
+                for (var j = 0; j < power.getMoveCount(); j ++) {
+                    var move = power.getMove(j)
+                    var item = move.getItem()
+                    if (item != null) {
+                        var absoluteSlot = power.getHotbarOffset() + j
+                        store result score @s ${Game.OBJ_SUCCESS} execute if data entity @s Inventory[${item.getSlotNBT()}]
+                        function ${new resource(move.getID() + "_store")} { }
+                        
+                        
+                        unless score @s ${Game.OBJ_SUCCESS} matches 1
+                        function ${new resource(move.getID() + "_too_many")} {
+                            eval move.removeItem()
+                            eval move.giveItem("hotbar." + absoluteSlot, 1, false)
+                        }
+                        
+                        unless data entity @s Inventory[{Slot: ${(tag_byte) absoluteSlot}, tag:${item.getItemTag()}}]
+                        function ${new resource(move.getID() + "_slot_does_not_match")} {
+                            eval move.removeItem()
+                            eval move.giveItem("hotbar." + absoluteSlot, 1, false)
+                        }
+                    }
+                    
+                }
+            }
+            
             if entity @s[tag=${power.getTagID()}]
             function ${new resource(power.getID() + "_run")} {
                 if (power.getID().matches(DRAGON_LORD)) {
                 }
             }
+            
+            
         }
+        
+        
+        # for (var i = 0; i < powers.length; i++) {
+        #     var power = powers[i]
+        #     if entity @s[tag=${power.getTagID()}]
+        #     function ${new resource(power.getID() + "_hotbar")} {
+        #         for (var j = 0; j < power.getMoveCount(); j ++) {
+        #             var move = power.getMove(j)
+        #             unless predicate ${is_slot_selected_predicates[j].getResource()}
+        #             tag @s remove ${move.getTagID()}
+        #             if predicate ${is_slot_selected_predicates[j].getResource()}
+        #             tag @s add ${move.getTagID()}
+        #             
+        #         }
+        #     }
+        #     if entity @s[tag=${power.getTagID()}]
+        #     function ${new resource(power.getID() + "_run")} {
+        #         if (power.getID().matches(DRAGON_LORD)) {
+        #         }
+        #     }
+        # }
     }
 }
+
+
+global var pwr_dragon_lord = new Power(Power.DRAGON_LORD)
+eval pwr_dragon_lord.setDisplayName(
+    new text_component({
+        "text" : "Dragon Lord",
+        "color" : Color.TEXT_RED,
+        "bold" : false
+    })
+)
+eval pwr_dragon_lord.setLore(
+    new text_component([
+            {
+                "text" : "- ",
+                "color" : Color.TEXT_WHITE,
+                "bold" : false
+            },
+            {
+                "text" : "unleash your wrath",
+                "color" : Color.TEXT_DARK_RED,
+                "bold" : true
+            },
+            {
+                "text" : " -",
+                "color" : Color.TEXT_WHITE,
+                "bold" : false
+            }
+        ])
+)
+eval pwr_dragon_lord.setSound(new Sound(resource<minecraft:entity.ender_dragon.growl>, Sound.ORIGIN_PLAYER, entity<@s>, coordinates<~ ~ ~>, 0.8, 1.6, 1.0))
+eval pwr_dragon_lord.addMoves(
+    [
+        mve_dragon_flight,
+        mve_dragon_breath,
+        mve_dragon_punch,
+        mve_dragon_form
+    ]
+)
+eval pwr_dragon_lord.setHotbarOffset(2)

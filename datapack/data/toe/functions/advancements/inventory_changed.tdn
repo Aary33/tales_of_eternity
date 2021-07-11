@@ -1,0 +1,17 @@
+@on compile
+@priority 0.0
+
+var resource = adv_inventory_changed
+eval File.out.writeData(
+    resource.getTridentDirectory() ,
+    JSON.stringify(
+        {
+            "criteria": {
+                "requirement": {
+                    "trigger": "minecraft:inventory_changed"
+                }
+            }
+        },
+        true
+    )
+)

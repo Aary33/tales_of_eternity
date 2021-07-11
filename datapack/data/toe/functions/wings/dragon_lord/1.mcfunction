@@ -12,7 +12,7 @@ particle minecraft:dust 0.04 0.04 0.04 0.55 ^-0.8333333 ^-0.4166667 ^0 0 0 0 0 1
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^0.75 ^-0.4166667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.0833333 ^-0.4166667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.25 ^-0.5 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^-1.1666667 ^-0.5 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^-1.1666667 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.0833333 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-0.9166667 ^-0.5 ^0 0 0 0 0 1 force @a
@@ -29,7 +29,7 @@ particle minecraft:dust 0.2 0.06 0.06 0.55 ^0.75 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^0.8333333 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^0.9166667 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1 ^-0.5 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^1.0833333 ^-0.5 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^1.0833333 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.1666667 ^-0.5 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.4166667 ^-0.5833333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.3333333 ^-0.5833333 ^0 0 0 0 0 1 force @a
@@ -73,10 +73,10 @@ particle minecraft:dust 0.16 0.05 0.05 0.55 ^-0.75 ^-0.6666667 ^0 0 0 0 0 1 forc
 particle minecraft:dust 0.16 0.05 0.05 0.55 ^-0.6666667 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^-0.5833333 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^-0.5 ^-0.6666667 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^-0.4166667 ^-0.6666667 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^-0.4166667 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.02 0.02 0.02 0.55 ^-0.3333333 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.02 0.02 0.02 0.55 ^0.25 ^-0.6666667 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^0.3333333 ^-0.6666667 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^0.3333333 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^0.4166667 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^0.5 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.16 0.05 0.05 0.55 ^0.5833333 ^-0.6666667 ^0 0 0 0 0 1 force @a
@@ -92,7 +92,7 @@ particle minecraft:dust 0.34 0.1 0.1 0.55 ^1.3333333 ^-0.6666667 ^0 0 0 0 0 1 fo
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.4166667 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.5 ^-0.6666667 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.6666667 ^-0.75 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^-1.5833333 ^-0.75 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^-1.5833333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.52 0.15 0.15 0.55 ^-1.5 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.2 0.06 0.06 0.55 ^-1.4166667 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.3333333 ^-0.75 ^0 0 0 0 0 1 force @a
@@ -105,10 +105,10 @@ particle minecraft:dust 0.04 0.04 0.04 0.55 ^-0.75 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.01 0.01 0.55 ^-0.6666667 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^-0.5833333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^-0.5 ^-0.75 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^-0.4166667 ^-0.75 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^-0.4166667 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.02 0.02 0.02 0.55 ^-0.3333333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.02 0.02 0.02 0.55 ^0.25 ^-0.75 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^0.3333333 ^-0.75 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^0.3333333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^0.4166667 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^0.5 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.01 0.01 0.55 ^0.5833333 ^-0.75 ^0 0 0 0 0 1 force @a
@@ -121,7 +121,7 @@ particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.1666667 ^-0.75 ^0 0 0 0 0 1 force
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.25 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.2 0.06 0.06 0.55 ^1.3333333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.52 0.15 0.15 0.55 ^1.4166667 ^-0.75 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^1.5 ^-0.75 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^1.5 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.5833333 ^-0.75 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.5833333 ^-0.8333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^-1.5 ^-0.8333333 ^0 0 0 0 0 1 force @a
@@ -212,12 +212,12 @@ particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.5 ^-1.25 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.5 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^-1.4166667 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.52 0.15 0.15 0.55 ^-1.3333333 ^-1.3333333 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^-1.25 ^-1.3333333 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^-1.25 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^-1.1666667 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^-1.0833333 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.13 0.04 0.04 0.55 ^1 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.0833333 ^-1.3333333 ^0 0 0 0 0 1 force @a
-particle minecraft:dust 0.73 0.2 0.2 0.55 ^1.1666667 ^-1.3333333 ^0 0 0 0 0 1 force @a
+particle minecraft:dust 0.98 0.07 0 0.55 ^1.1666667 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.52 0.15 0.15 0.55 ^1.25 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.34 0.1 0.1 0.55 ^1.3333333 ^-1.3333333 ^0 0 0 0 0 1 force @a
 particle minecraft:dust 0.04 0.04 0.04 0.55 ^1.4166667 ^-1.3333333 ^0 0 0 0 0 1 force @a

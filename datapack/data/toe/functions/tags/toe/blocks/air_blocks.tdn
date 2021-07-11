@@ -1,0 +1,13 @@
+@on compile
+@priority 5.0
+
+eval Tags.createTag(
+    "block",
+    resource<#toe:air_blocks>,
+    [
+        resource<minecraft:air>,
+        resource<minecraft:cave_air>,
+        resource<minecraft:void_air>
+    ]
+)
+

@@ -1,98 +1,36 @@
 @on compile
 @priority 5.1
 
-# Resources
-#
-#
-
-# Predicates
-
-# Particle Enums
-global var WING_FRAMES = {}
-eval WING_FRAMES.ANIM_01 = 0
-eval WING_FRAMES.ANIM_02 = 1
-eval WING_FRAMES.ANIM_03 = 2
-eval WING_FRAMES.ANIM_04 = 3
-eval WING_FRAMES.ACTIVE = 4
-eval WING_FRAMES.DEACTIVE = 0
-eval WING_FRAMES.SNEAK = 0
-eval WING_FRAMES.ASCENT = 0
-eval WING_FRAMES.GLIDE = 2
-eval WING_FRAMES.FALL = 0
-
-# Particles
-global var WINGS = {
-    dragon_lord: [
-        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_01>,
-        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_02>,
-        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_03>,
-        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_04>,
-        resource<toe:particle_images/wings/dragon_lord/dragon_lord_wing_05>
-    ]
-}
-
-
-
-# Enumerations
-#
-#
-
-# Moves Enums
-global var MOVES = {}
-eval MOVES.DRAGON_FLIGHT = 0
-eval MOVES.DRAGON_BREATH = 1
-
-# Powers Enums
-global var POWERS = {}
-eval POWERS.DRAGON_LORD = 0
-
-# Callback Enums
-global var CALLBACK = {}
-eval CALLBACK.PLAYER_CHANGED_POWERS = 0
-eval CALLBACK.PLAYER_DIED = 1
-eval CALLBACK.PLAYER_JUMPED = 2
-eval CALLBACK.POST_MOVE_SWAP = 3
-eval CALLBACK.UPDATE_SNEAK_TIME = 4
-
-# Timer Enums
-global var TIMER = {}
-eval TIMER.WING_FRAME = 0
-
-
 # Objectives
 #
 #
 
-define objective toe.age dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Entity Age"}]
-define objective toe.spirit dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Spirit"}]
-define objective toe.var dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Variables", "color": "green"}]
-define objective toe.bar dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Bossbar ID"}]
-define objective toe.wings dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Wings Frame", "color": "white"}]
-define objective toe.s.sneak minecraft.custom:minecraft.sneak_time ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Trigger Stat", "color": "white"}]
-define objective toe.s.sneak.p.+ dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Stat", "color": "white"}]
-define objective toe.s.sneak.p.- dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player sneak_time Since Stat", "color": "white"}]
-define objective toe.s.jump minecraft.custom:minecraft.jump ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player jump Trigger Stat", "color": "white"}]
-define objective toe.s.fall dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"fallDistance Stat", "color": "white"}]
-define objective toe.s.ground dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"on_ground Stat", "color": "white"}]
+define objective ${Game.OBJ_AGE} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Entity Age"}]
+define objective ${Game.OBJ_GLOBAL_VARIABLE} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Global Variables", "color": "green"}]
+define objective ${Game.OBJ_CALLBACK} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Callback Trigger", "color": "green"}]
+define objective ${Game.OBJ_BOSSBAR_ID} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Bossbar ID"}]
+define objective ${Game.OBJ_SUCCESS} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Store Command Successes"}]
+define objective toe.wings dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Wings Frame", "color": "white"}]
+define objective ${Game.OBJ_BURN} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Burn Time", "color": "white"}]
+define objective ${Game.OBJ_LOOP} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Loop Timer", "color": "white"}]
+define objective toe.s.sneak minecraft.custom:minecraft.sneak_time ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player sneak_time Trigger Stat", "color": "white"}]
+define objective toe.s.sneak.p.+ dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player sneak_time Stat", "color": "white"}]
+define objective toe.s.sneak.p.- dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player sneak_time Since Stat", "color": "white"}]
+define objective toe.s.jump minecraft.custom:minecraft.jump ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player jump Trigger Stat", "color": "white"}]
+define objective ${Game.OBJ_FALL_DISTANCE} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"fallDistance Stat", "color": "white"}]
+define objective toe.s.ground dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"on_ground Stat", "color": "white"}]
+define objective ${Game.OBJ_SELECTED_SLOT} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player selectedSlot Stat", "color": "white"}]
+define objective toe.s.death deathCount ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Player deathCount Trigger Stat", "color": "white"}]
+define objective ${Game.OBJ_COOLDOWN} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Cooldown Timer", "color": "white"}]
+define objective ${Game.OBJ_STAMINA} dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":"Stamina Timer", "color": "white"}]
 
-
-define objective toe.stat.death deathCount ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player deathCount Stat", "color": "white"}]
-# define objective toe.stat.slot dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player selectedSlot Stat", "color": "white"}]
-
-# Callbacks
-global var callback_playerCountChanged = entity<#playerCountChanged>
-define objective toe.callback dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Callbacks", "color": "green"}]
-define objective ${"toe.callback." + CALLBACK.PLAYER_CHANGED_POWERS} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Changed Team Callback", "color": "white"}]
-define objective ${"toe.callback." + CALLBACK.PLAYER_DIED} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Died Callback", "color": "white"}]
-define objective ${"toe.callback." + CALLBACK.PLAYER_JUMPED} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Player Jumped Callback", "color": "white"}]
-define objective ${"toe.callback." + CALLBACK.POST_MOVE_SWAP} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Post Move Swap Callback", "color": "white"}]
-define objective ${"toe.callback." + CALLBACK.UPDATE_SNEAK_TIME} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Update Sneak Time Callback", "color": "white"}]
-
-# Timers
-define objective toe.timer dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Global Timers", "color": "green"}]
-define objective ${"toe.timer." + TIMER.WING_FRAME} dummy ["",{"text" : "[TOE] ", "color": "yellow"},{"text":"Wing Animation Timer", "color": "white"}]
-
-# Game Variables
-#
-# 
+        
+for (var i = 0; i < Game.OBJ_UUID_LIST.length; i++) {
+    var uuid_display = "UUID[" + i + "] Value"
+    var uuid_objective = Game.OBJ_UUID_LIST[i]
+    define objective $uuid_objective dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":$uuid_display, "color": "white"}]
+    var owner_display = "Owner UUID[" + i + "] Value"
+    var owner_objective = Game.OBJ_OWNER_UUID_LIST[i]
+    define objective $owner_objective dummy ["",{"text" : ${"[" + Game.NAMESPACE + "] "}, "color": "yellow"},{"text":$owner_display, "color": "white"}]
+}
 

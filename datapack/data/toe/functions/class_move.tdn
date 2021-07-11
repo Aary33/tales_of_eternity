@@ -1,391 +1,1083 @@
 @on compile
-@priority 4.2
+@priority 4.3
 
 # TODO: Class_Move
-# Add run sequence to move
-# - activating/deactivating
-# - using
+# Add swapping out of move callback
+# - clears tags and status effects
+define class Status {
+    private var id : string
+    private var group : int
+    private var stored : boolean
+    private var display : text_component
+    
+    public new(id : string) {
+        eval this.id = id
+        eval this.group = 0
+        eval this.store = false
+    }
+    public new(id : string, group : int) {
+        eval this.id = id
+        eval this.group = group
+        eval this.stored = false
+    }
+    public new(id : string, group : int, stored : boolean) {
+        eval this.id = id
+        eval this.group = group
+        eval this.stored = stored
+    }
+    public new(id : string, group : int, stored : boolean, display : text_component) {
+        eval this.id = id
+        eval this.group = group
+        eval this.stored = stored
+        eval this.display = display
+    }
+    
+    public getID() : string { return this.id }
+    public getGroupID() : int { return this.group }
+    public getStored() : boolean { return this.stored }
+    public displayExists() : boolean { return this.display != null }
+    public getDisplay() : text_component {
+        if (displayExists()) {
+            return this.display
+        }
+        return new text_component({"text":""})
+    }
+    
+    public setGroupID(group : int) { eval this.group = group}
+    public setStored(stored : boolean) { eval this.stored = stored}
+    public setDisplay(display : text_component ) { eval this.display = display}
+    
+    public tagStatus(from : list) {
+        for (var i = 0; i < from.length; i ++) {
+            if (from[i].getGroupID() == getGroupID()) {
+                tag @s remove ${from[i].getID()}
+            }
+        }
+        tag @s add ${getID()}
+        
+    }
+    public static clearGroupStatus(from : list, group : int) {
+        for (var i = 0; i < from.length; i ++) {
+            if (from[i].getGroupID() == group) {
+                tag @s remove ${from[i].getID()}
+            }
+        }
+    }
+        
+}
+
 
 define class Move {
-    
     public static final var TAG_ID_NAMESPACE : string = "mve"
     
     public static final var DRAGON_FLIGHT : string = "dragon_flight"
     public static final var DRAGON_BREATH : string = "dragon_breath"
+    public static final var DRAGON_PUNCH : string = "dragon_punch"
+    public static final var DRAGON_FORM : string = "dragon_form"
+    
+    public static var moves : list = []
     
     private var id : string
+    private var meter : Meter
     private var displayName : text_component
     private var tagID : string
-    private var spiritCost : int
+    private var minimumCost : int
     private var data : dictionary
-    private var runTags : list
+    private var item
+    private var statusList : list
     
-    private static makeTagID(name : string) : string {
-        return TAG_ID_NAMESPACE + "." + name
-    }
-    private static makeRunTagID(id : string, name : string) : string {
-        return TAG_ID_NAMESPACE + "." + id + "." + name
-    }
-    
-    public new(id : string) {
+    public new(id : string, meter : Meter) {
         eval this.id = id
-        eval this.tagID = makeTagID(this.id)
-        eval this.spiritCost = 0
+        eval this.meter = meter
+        eval this.displayName = new text_component({"text" : ""})
+        eval this.minimumCost = 0
+        eval this.tagID = Game.NAMESPACE + "." + TAG_ID_NAMESPACE + "." + this.id
         eval this.data = {}
-        eval this.runTags = []
+        eval this.statusList = []
+        eval this.item = null
+        
+        eval Move.moves.add(this)
     }
-    public getID() : string {
-        return this.id
-    }
-    public getTagID() : string {
-        return this.tagID
-    }
-    public getData() : dictionary {
-        return this.data
-    }
+    public getID() : string { return this.id }
+    public getMeter() : Meter { return this.meter}
+    public getDisplayName() : text_component { return this.displayName }
+    public getMinimumCost() : int { return this.minimumCost }
+    public getTagID() : string { return this.tagID }
+    public getData() : dictionary { return this.data }
+    public getItem() { return this.item }
     
-    public setDisplayName(name : text_component) {
-        eval this.displayName = name
+    public setDisplayName(name : text_component) { eval this.displayName = name }
+    public setMinimumCost(minimumCost : int) { eval this.minimumCost = minimumCost }
+    public setData(data : dictionary) { eval this.data = data }
+    public setItem(item : custom_item) { eval this.item = item }
+    public giveItem(slot : string, count : int, replace : boolean) { 
+        var item = getItem()
+        if (item != null) {
+            var cmd = "item replace entity @s " + slot + " with " + item.baseType + item.getItemTag() + " " + count
+            
+            if (replace == true) {
+                /${cmd}
+            } else {
+                eval Game.dropItem(entity<@s>, slot, true)
+                /${cmd}
+            }
+            
+        }
     }
-    public setSpiritCost(cost : int) {
-        eval this.spiritCost = cost
-    }
-    public setData(data : dictionary) {
-        eval this.data = data
-    }
-    
-    public getRunTags() : list {
-        return this.runTags
-    }
-    public getRunTag(index : int) : string {
-        return this.runTags[index]
-    }
-    public getRunTag(name : string) : string {
-        var index = this.runTags.indexOf(makeRunTagID(this.id, name))
-        return this.runTags[index]
-    }
-    public getRunTagCount() : int {
-        return this.runTags.length
-    }
-    public clearRunTags() {
-        eval this.runTags.clear()
-    }
-    public addRunTag(name : string) {
-        eval this.runTags.add(makeRunTagID(this.id, name))
-    }
-    public insertRunTag(name : string, index : int) {
-        eval this.runTags.insert(makeRunTagID(this.id, name), index)
-    }
-    public removeRunTag(index : int) {
-        eval this.runTags.remove(index)
-    }
-    public removeRunTag(name : string) {
-        var index = this.runTags.indexOf(makeRunTagID(this.id, name))
-        eval this.runTags.remove(index)
-    }
-    
-    public setRunTags(tags : list) {
-        eval this.runTags = tags
-    }
-    public addRunTagsByName(names : list) {
-        for (var i = 0; i < names.length; i++) {
-            eval this.addRunTag(names[i])
+    public removeItem() { 
+        var item = getItem()
+        if (item != null) {
+            clear @s $item
         }
     }
     
-    public static run(moves : list) {
+    public makeStatusTagID(name : string) : string {
+        return Game.NAMESPACE + "." + TAG_ID_NAMESPACE + "." + getID() + ".status." + name
+    }
+    public getStatusList() : list {
+        return this.statusList
+    }
+    public getStatus(name : string) : Status {
+        var index = -1
+        for (var i = 0; i < getStatusList().length; i++) {
+            if (getStatusList()[i].getID().matches(makeStatusTagID(name))) {
+                eval index = i
+            }
+        }
+        return getStatusList()[index]
+    }
+    public addStatus(name : string, group : int, stored : boolean) { 
+        var status = new Status(makeStatusTagID(name), group, stored)
+        eval this.statusList.add(status) 
+    }
+    public addStatus(name : string, group : int, stored : boolean, display : text_component) { 
+        var status = new Status(makeStatusTagID(name), group, stored, display)
+        eval this.statusList.add(status) 
+    }
+    public tagStatus(name : string) {
+        var status = getStatus(name)
+        eval status.tagStatus(getStatusList())
+    }
+    public clearGroupStatus(group : int) {
+        eval Status.clearGroupStatus(getStatusList(), group)
+    }
+    
+    public displayActionBar() {
+        var filteredList = getStatusList()
+        eval filteredList = filteredList.filter(
+            function(value, index) {
+                return value.displayExists()
+            }
+        )
+        var sortedList : list = []
+        if (filteredList.length > 1) {
+            while (filteredList.length > 0) {
+                var index : int = 0
+                var max : int = filteredList[index].getGroupID()
+                var temp : Status = filteredList[index]
+                for (var j = 0; j < filteredList.length; j++) {
+                    if (filteredList[j].getGroupID() > max) {
+                        eval index = j
+                        eval max = filteredList[index].getGroupID()
+                        eval temp = filteredList[index]
+                    }
+                }
+                eval filteredList.remove(index)
+                eval sortedList.insert(temp, 0)
+            }
+            
+        }
+        title @s actionbar ${new text_component(
+                [
+                    "", 
+                    {"text" : "", "bold" : true},
+                    getDisplayName()
+                ]
+            )
+        }
+        for (var i = 0; i < sortedList.length; i ++) {
+            if entity @s[tag=${sortedList[i].getID()}]
+            title @s actionbar ${new text_component(
+                    [
+                        "", 
+                        {"text" : "", "bold" : true},
+                        getDisplayName(),
+                        {"text" : " :: ", "bold" : true},
+                        sortedList[i].getDisplay(),
+                        {"text" : "", "bold" : true}
+                    ]
+                )
+            }
+        }
+    }
+    
+    public static run() {
+        
+        var windSound = new Sound(resource<minecraft:item.elytra.flying>, Sound.ORIGIN_PLAYER, entity<@s>, coordinates<~ ~ ~>, 0.1, 1.1, 0.1)
+        var windSoundCycle = new SoundCycle("wing_glide", windSound, 160)
+        var flamingSound = new Sound(resource<minecraft:block.fire.ambient>, Sound.ORIGIN_PLAYER, entity<@s>, coordinates<~ ~ ~>, 1.0, 0.75, 0.0)
+        var flamingSoundCycle = new SoundCycle("fire_ambient", flamingSound, 30)
+        
         for (var i = 0; i < moves.length; i++) {
             var move = moves[i]
             function ${new resource(move.getID() + "_run")} {
+                
+                var status_clear = "clear"
+                var group_universal = 99
+                eval move.addStatus(status_clear, group_universal, true)
+                
+                var cleanup = function(move : Move) {
+                    if (move.getID().matches(DRAGON_FLIGHT)) {
+                        if entity @s[tag=${move.getTagID()}]
+                        function cleanup {
+                            effect clear @s minecraft:jump_boost 
+                            effect clear @s minecraft:levitation
+                            effect give @s levitation 1 220 true
+                            tag @s add ${move.getStatus(status_clear).getID()}
+                            
+                            eval windSoundCycle.stop(false)
+                            eval Wings.stop()
+                        }
+                    }
+                    if (move.getID().matches(DRAGON_PUNCH)) {
+                        if entity @s[tag=${move.getTagID()}]
+                        function cleanup {
+                            effect clear @s minecraft:speed
+                            effect clear @s minecraft:jump_boost
+                        }
+                    }
+                    if (move.getID().matches(DRAGON_FORM)) {
+                        if entity @s[tag=${move.getTagID()}]
+                        function cleanup {
+                            effect clear @s minecraft:jump_boost
+                            effect clear @s minecraft:speed
+                            effect clear @s minecraft:strength
+                            
+                            eval Wings.stop()
+                        }
+                    }
+                    for (var j = 0; j < move.getStatusList().length; j++) {
+                        if (move.getStatusList()[j].getStored() == false) {
+                            tag @s remove ${move.getStatusList()[j].getID()}
+                        }
+                    }
+                }
+                eval Callback.addCallback(Callback.ENUM_PRE_PLAYER_CHANGED_HOTBAR_SLOT, cleanup, move)
+                
+                
                 if (move.getID().matches(DRAGON_FLIGHT)) {
+                    var status_charge_none = "charge.none"
+                    var status_charge_0 = "charge.0"
+                    var status_charge_1 = "charge.1"
+                    var status_charge_2 = "charge.2"
+                    var status_charge_not_enough = "charge.not_enough"
+                    var status_ground = "ground"
+                    var status_launch = "launch"
+                    var status_flight = "flight"
+                    var status_ascend_fast = "ascend.fast"
+                    var status_ascend_slow = "ascend.slow"
+                    var status_descend_fast = "descend.fast"
+                    var status_descend_slow = "descend.slow"
+                    var group_charge = 2
+                    var group_flight = 0
+                    var group_flight_subtags = 1
+                    eval move.addStatus(status_charge_none, group_charge, false)
+                    eval move.addStatus(status_charge_0, group_charge, false, new text_component(
+                            [
+                                {"text" : "  |", "color": Color.TEXT_YELLOW, "bold" : false},
+                                {"text" : "CHARGING", "color": Color.TEXT_YELLOW, "bold" : true},
+                                {"text" : "|  ", "color": Color.TEXT_YELLOW, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_charge_1, group_charge, false, new text_component(
+                            [
+                                {"text" : " ||", "color": Color.TEXT_YELLOW, "bold" : false},
+                                {"text" : "CHARGING", "color": Color.TEXT_YELLOW, "bold" : true},
+                                {"text" : "|| ", "color": Color.TEXT_YELLOW, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_charge_2, group_charge, false, new text_component(
+                            [
+                                {"text" : "|||", "color": Color.TEXT_YELLOW, "bold" : false},
+                                {"text" : "CHARGING", "color": Color.TEXT_YELLOW, "bold" : true},
+                                {"text" : "|||", "color": Color.TEXT_YELLOW, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_charge_not_enough, group_charge, false, new text_component({"text" : "NOT ENOUGH", "color": Color.TEXT_DARK_RED, "bold" : true,"italic":true}))
+                    eval move.addStatus(status_ground, group_flight, false)
+                    eval move.addStatus(status_launch, group_flight, false, new text_component(
+                            [
+                                {"text" : "|||||", "color": Color.TEXT_GOLD, "bold" : false},
+                                {"text" : "LAUNCH", "color": Color.TEXT_GOLD, "bold" : true},
+                                {"text" : "|||||", "color": Color.TEXT_GOLD, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_flight, group_flight, false)
+                    eval move.addStatus(status_ascend_fast, group_flight_subtags, false, new text_component(
+                            [
+                                {"text" : "||", "color": Color.TEXT_GREEN, "bold" : false},
+                                {"text" : "ASCENDING", "color": Color.TEXT_GREEN, "bold" : true},
+                                {"text" : "||", "color": Color.TEXT_GREEN, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_ascend_slow, group_flight_subtags, false, new text_component(
+                            [
+                                {"text" : " |", "color": Color.TEXT_GREEN, "bold" : false},
+                                {"text" : "ASCENDING", "color": Color.TEXT_GREEN, "bold" : true},
+                                {"text" : "| ", "color": Color.TEXT_GREEN, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_descend_fast, group_flight_subtags, false, new text_component(
+                            [
+                                {"text" : "||", "color": Color.TEXT_YELLOW, "bold" : false},
+                                {"text" : "DESCENDING", "color": Color.TEXT_YELLOW, "bold" : true},
+                                {"text" : "||", "color": Color.TEXT_YELLOW, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_descend_slow, group_flight_subtags, false, new text_component(
+                            [
+                                {"text" : " |", "color": Color.TEXT_YELLOW, "bold" : false},
+                                {"text" : "DESCENDING", "color": Color.TEXT_YELLOW, "bold" : true},
+                                {"text" : "| ", "color": Color.TEXT_YELLOW, "bold" : false}
+                            ]
+                        ))
+                    
+                    var chargebasecost = (int) (move.getData().CostChargeMultipliers.Base)
+                    var charge0cost = (int) (chargebasecost * move.getData().CostChargeMultipliers.Charge0)
+                    var charge1cost = (int) (chargebasecost * move.getData().CostChargeMultipliers.Charge1)
+                    var charge2cost = (int) (chargebasecost * move.getData().CostChargeMultipliers.Charge2)
+                    
                     if entity @s[tag=${move.getTagID()}]
                     function wings {
                         eval wgs_dragon_lord.animate()
                     }
                     
-                    if score @s toe.spirit matches ..0
-                    if entity @s[tag=${move.getTagID()}]
-                    function depleted_spirit {
-                        eval Wings.setIdle()
+                    var playerOnGround = function(move : Move) {
                         
-                        if entity @s[tag=${move.getRunTag("ascend_fast")}]
-                        tag @s add ${move.getRunTag("descend_slow")}
-                        if entity @s[tag=${move.getRunTag("ascend_slow")}]
-                        tag @s add ${move.getRunTag("descend_slow")}
-                        
-                        tag @s remove ${move.getRunTag("ascend_fast")}
-                        tag @s remove ${move.getRunTag("ascend_slow")}
-                        
-                        effect clear @s minecraft:levitation
-                    }
-                    
-                    if entity @s[tag=${move.getTagID()}]
-                    function charge {
-                        
-                        if score @s toe.spirit matches ..0
-                        if entity @s[tag=!${move.getRunTag("charge_-1")}]
-                        function depleted_spirit {
-                            eval Wings.setIdle()
-                            tag @s remove ${move.getRunTag("charge_-1")}
-                            tag @s remove ${move.getRunTag("charge_0")}
-                            tag @s remove ${move.getRunTag("charge_1")}
-                            tag @s remove ${move.getRunTag("charge_2")}
-                            effect clear @s minecraft:jump_boost
-                        }
-                        
-                        if score ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.member} matches 10..
-                        if entity @s[tag=!${move.getRunTag("flight")}]
-                        function charge_-1 {
+                        if entity @s[tag=${move.getTagID()}]
+                        function player_on_ground {
                             
-                            if entity @s[tag=!${move.getRunTag("charge_-1")}]
-                            function first_time {
+                            if score ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_SINCE_PRESSED.member} matches 6..
+                            function charge_none {
+                                unless entity @s[tag=${move.getStatus(status_charge_none).getID()}]
+                                function init {
+                                    eval Wings.setSlow()
+                                    eval Wings.setIdle()
+                                    
+                                    eval move.tagStatus(status_charge_none)
+                                    effect clear @s minecraft:jump_boost
+                                    effect clear @s minecraft:levitation
+                                }
+                            }
+                            
+                            unless score @s ${move.getMeter().getObjective()} matches ${charge0cost}..
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                            function not_enough_for_charge {
                                 eval Wings.setSlow()
-                                eval Wings.setIdle()
-                                tag @s remove ${move.getRunTag("charge_0")}
-                                tag @s remove ${move.getRunTag("charge_1")}
-                                tag @s remove ${move.getRunTag("charge_2")}
-                                tag @s add ${move.getRunTag("charge_-1")}
+                                eval Wings.setFly()
+                                eval move.tagStatus(status_charge_not_enough)
                                 effect clear @s minecraft:jump_boost
                             }
                             
-                        }
-                        
-                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge0}..
-                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
-                        function charge_0 {
-                            eval Wings.setFly()
-                            eval Wings.setSlow()
-                            
-                            function draw_cycle {
-                                var particle = new Particle("minecraft:smoke", 0.05, 0)
-                                eval new ParticleCycle(18.0, 1.5, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                            if score @s ${move.getMeter().getObjective()} matches $charge0cost..
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                            function charge_0 {
+                                unless entity @s[tag=${move.getStatus(status_charge_0).getID()}]
+                                function first_time {
+                                    eval Wings.setFly()
+                                    eval Wings.setSlow()
+                                    eval move.tagStatus(status_charge_0)
+                                    effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge0} true
+                                    
+                                }
+                                function tick {
+                                    function particles {
+                                        var particle = new Particle("minecraft:smoke", 0.05, 0)
+                                        eval new ParticleCycle(18.0, 1.5, -0.25, coordinates<~ ~0.5 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_LOW, false)
+                                    }
+                                }
                                 
-                                eval particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
-                                eval particle.setFirstColor(1.0, 0.75, 0.0)
-                                eval particle.setSecondColor(1.0, 0.95, 0.55)
-                                eval particle.setSize(1.25)
-                                # eval new ParticleCycle(36.0, 0.3, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
                             }
                             
-                            if entity @s[tag=!${move.getRunTag("charge_0")}]
-                            unless entity @s[tag=${move.getRunTag("charge_1")}]
-                            unless entity @s[tag=${move.getRunTag("charge_2")}]
-                            function first_time {
-                                tag @s remove ${move.getRunTag("charge_-1")}
-                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge0} true
-                                tag @s add ${move.getRunTag("charge_0")}
+                            if score @s ${move.getMeter().getObjective()} matches $charge1cost..
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 40..
+                            function charge_1 {
+                                unless entity @s[tag=${move.getStatus(status_charge_1).getID()}]
+                                function init {
+                                    eval Wings.setNormal()
+                                    eval move.tagStatus(status_charge_1)
+                                    effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge1} true
+                                    
+                                }
+                                function tick {
+                                    function particles {
+                                        var particle = new Particle("minecraft:smoke", 0.075, 0)
+                                        eval new ParticleCycle(15.0, 1.75, -0.25, coordinates<~ ~0.5 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_LOW, false)
+                                    }
+                                }
                             }
-                        }
-                        
-                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge1}..
-                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 40..
-                        function charge_1 {
-                            eval Wings.setNormal()
                             
-                            function draw_cycle {
-                                var particle = new Particle("minecraft:smoke", 0.075, 0)
-                                eval new ParticleCycle(15.0, 1.75, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
+                            if score @s ${move.getMeter().getObjective()} matches $charge2cost..
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 80..
+                            function charge_2 {
+                                unless entity @s[tag=${move.getStatus(status_charge_2).getID()}]
+                                function init {
+                                    eval Wings.setFast()
+                                    eval move.tagStatus(status_charge_2)
+                                    effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge2} true
+                                }
                                 
-                                eval particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
-                                eval particle.setFirstColor(0.75, 0.3, 0.0)
-                                eval particle.setSecondColor(0.25, 0.10, 0.0)
-                                eval particle.setSize(1.5)
-                                # eval new ParticleCycle(30.0, 0.5, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_HIGH)
-                            }
-                            
-                            if entity @s[tag=!${move.getRunTag("charge_1")}]
-                            unless entity @s[tag=${move.getRunTag("charge_2")}]
-                            function first_time {
-                                tag @s remove ${move.getRunTag("charge_0")}
-                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge1} true
-                                tag @s add ${move.getRunTag("charge_1")}
-                            }
-                        }
-                        
-                        if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge2}..
-                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 80..
-                        function charge_2 {
-                            eval Wings.setFast()
-                            
-                            function draw_cycle {
-                                var particle = new Particle("minecraft:smoke", 0.4, 0)
-                                eval new ParticleCycle(15.0, 2.5, -0.25, coordinates<0.0 0.5 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
-                                
-                                var particle = new Particle("minecraft:large_smoke", 0.5, 0)
-                                eval new ParticleCycle(45.0, 3.5, 0.15, coordinates<0.0 0.01 0.0>, particle).draw(false, ParticleCycle.CHANCE_LOW)
-                                
-                                eval particle = new Particle("minecraft:dust", 0.0, 0)
-                                eval particle.setFirstColor(0.15, 0.1, 0.1)
-                                eval particle.setSize(1.5)
-                                # eval new ParticleCycle(20.0, 0.75, 0.0, coordinates<0.0 0.001 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
-                            }
-                            
-                            if entity @s[tag=!${move.getRunTag("charge_2")}]
-                            function first_time {
-                                tag @s remove ${move.getRunTag("charge_1")}
-                                effect give @s minecraft:jump_boost 999999 ${move.getData().ChargeJumpBoostAmplifier.Charge2} true
-                                tag @s add ${move.getRunTag("charge_2")}
+                                function tick {
+                                    function particles {
+                                        var particle = new Particle("minecraft:smoke", 0.4, 0)
+                                        eval new ParticleCycle(15.0, 2.5, -0.25, coordinates<~ ~0.5 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_LOW, false)
+                                        
+                                        var particle = new Particle("minecraft:large_smoke", 0.5, 0)
+                                        eval new ParticleCycle(45.0, 3.5, 0.15, coordinates<~ ~0.01 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_LOW, false)
+                                        
+                                    }
+                                }
                             }
                         }
-                        
-                        
                         
                     }
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_ON_GROUND, playerOnGround , move)
                     
-                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMPED,
-                        function() {
-                            if score @s toe.spirit matches ${move.getData().ChargeSpiritCost.Charge0}..
-                            if entity @s[tag=${move.getTagID()}]
-                            if entity @s[tag=!${move.getRunTag("charge_-1")}]
-                            if entity @s[tag=!${move.getRunTag("launch")}]
-                            function jump {
-                                tag @s add ${move.getRunTag("launch")}
-                                var particle = new Particle("minecraft:campfire_cosy_smoke", 0.5, 0)
-                                playsound minecraft:entity.generic.explode player @a ~ ~ ~ 0.8 1.2
+                    var playerOnJump = function(move : Move) {
+                        if entity @s[tag=${move.getTagID()}]
+                        function player_on_jump {
+                            var any = function {
+                                eval move.clearGroupStatus(group_charge)
+                                eval move.tagStatus(status_launch)
+                            }
+                            
+                            if entity @s[tag=${move.getStatus(status_charge_0).getID()}]
+                            function charge_0 {
+                                function $any
+                                set @s->${move.getMeter().getObjective()} -= $charge0cost
+                                playsound minecraft:entity.generic.explode player @a ~ ~ ~ 0.5 1.25
+                                function particles {
+                                    var particle = new Particle("minecraft:campfire_cosy_smoke", 0.5, 0)
+                                    eval new ParticleCycle(45.0, 0.1, 0.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                                }
                                 
-                                if entity @s[tag=${move.getRunTag("charge_0")}]
-                                function weak {
-                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge0}
-                                    eval new ParticleCycle(45.0, 0.1, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
-                                }
-                                if entity @s[tag=${move.getRunTag("charge_1")}]
-                                function normal {
-                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge1}
+                            }
+                            if entity @s[tag=${move.getStatus(status_charge_1).getID()}]
+                            function charge_1 {
+                                function $any
+                                set @s->${move.getMeter().getObjective()} -= $charge1cost
+                                playsound minecraft:entity.generic.explode player @a ~ ~ ~ 0.7 1.2
+                                function particles {
                                     particle minecraft:lava ~ ~1.0 ~ 0.5 0 0.5 0 2 force @a
-                                    eval new ParticleCycle(36.0, 0.2, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                    var particle = new Particle("minecraft:campfire_cosy_smoke", 0.5, 0)
+                                    eval new ParticleCycle(36.0, 0.2, 0.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
                                 }
-                                if entity @s[tag=${move.getRunTag("charge_2")}]
-                                function strong {
-                                    set @s->toe.spirit -= ${move.getData().ChargeSpiritCost.Charge2}
+                            }
+                            if entity @s[tag=${move.getStatus(status_charge_2).getID()}]
+                            function charge_2 {
+                                function $any
+                                set @s->${move.getMeter().getObjective()} -= $charge2cost
+                                playsound minecraft:entity.generic.explode player @a ~ ~ ~ 1.5 1.1
+                                function particles {
                                     particle minecraft:flash ~ ~1.0 ~ 0 0 0 0 1 force @a
                                     particle minecraft:lava ~ ~1.0 ~ 0.5 0 0.5 0 10 force @a
-                                    eval new ParticleCycle(18.0, 0.5, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                                    var particle = new Particle("minecraft:campfire_cosy_smoke", 0.5, 0)
+                                    eval new ParticleCycle(18.0, 0.5, 0.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
                                 }
                             }
+                            
                         }
-                    )
-                    
-                    if entity @s[tag=${move.getRunTag("launch")}]
-                    function during_launch {
-                        var particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
-                        eval particle.setFirstColor(1.0, 0.75, 0.0)
-                        eval particle.setSecondColor(1.0, 0.1, 0.0)
-                        eval particle.setSize(2.0)
-                        eval new ParticleCycle(45.0, 0.25, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
                         
-                        eval particle = new Particle("minecraft:poof", 0.5, 0)
-                        eval new ParticleCycle(45.0, 0.1, -1.0, coordinates<0.0 -1.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
+                    }
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMPED, playerOnJump , move)
+                    
+                    if entity @s[tag=${move.getStatus(status_launch).getID()}]
+                    function launch_tick {
+                        function particles {
+                            var particle = new Particle("minecraft:dust_color_transition", 0.0, 0)
+                            eval particle.setFirstColor(1.0, 0.75, 0.0)
+                            eval particle.setSecondColor(1.0, 0.1, 0.0)
+                            eval particle.setSize(2.0)
+                            eval new ParticleCycle(45.0, 0.25, 0.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                            
+                            eval particle = new Particle("minecraft:poof", 0.5, 0)
+                            eval new ParticleCycle(45.0, 0.1, -1.0, coordinates<~ ~-1 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                        }
                         
                     }
                     
-                    var windSound = new Sound(resource<minecraft:item.elytra.flying>)
-                    eval windSound.setVolume(0.3)
-                    eval windSound.setPitch(1.1)
-                    eval windSound.setMinVolume(0.3)
-                    var windSoundCycle = new SoundCycle("wing_glide", windSound, 100)
-                    
-                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMP_HEIGHT_REACHED,
-                        function() {
-                            if entity @s[tag=${move.getRunTag("launch")}]
-                            function reached_height {
-                                eval windSoundCycle.play(false)
-                                tag @s remove ${move.getRunTag("launch")}
-                                tag @s add ${move.getRunTag("flight")}
-                            }
+                    var playerJumpHeightReached = function(move : Move) {
+                        if entity @s[tag=${move.getTagID()}]
+                        if entity @s[tag=${move.getStatus(status_launch).getID()}]
+                        function player_jump_height_reached {
+                            eval windSoundCycle.play(false)
+                            eval move.clearGroupStatus(group_charge)
+                            eval move.tagStatus(status_flight)
                         }
-                    )
-                    
-                    var remove_flight_subtags = function() {
-                        tag @s remove ${move.getRunTag("ascend_fast")}
-                        tag @s remove ${move.getRunTag("ascend_slow")}
-                        tag @s remove ${move.getRunTag("descend_fast")}
-                        tag @s remove ${move.getRunTag("descend_slow")}
-                        effect clear @s minecraft:levitation
                     }
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_JUMP_HEIGHT_REACHED, playerJumpHeightReached, move)
                     
-                    if entity @s[tag=${move.getRunTag("flight")}]
-                    function during_flight {
-                        var descend_slow = function {
-                            function descend_slow {
+                    
+                    if entity @s[tag=${move.getStatus(status_flight).getID()}]
+                    function flight_tick {
+                        if entity @s[x_rotation=${move.getData().AscendRotation.Fast[0]}..${move.getData().AscendRotation.Slow[1]}]
+                        unless score @s ${move.getMeter().getObjective()} matches ${move.getData().FlightCost.Ascend.Slow}..
+                        function not_enough {
+                            unless entity @s[tag=${move.getStatus(status_descend_slow).getID()}]
+                            function init {
+                                eval move.tagStatus(status_descend_slow)
                                 eval Wings.setGlide()
-                                eval Wings.setSlow()
-                                
-                                eval remove_flight_subtags()
-                                tag @s add ${move.getRunTag("descend_slow")}
+                                effect clear @s minecraft:levitation
                                 effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Slow} true
+                            }
+                            function tick {
+                                set @s->${move.getMeter().getObjective()} -= ${move.getData().FlightCost.Descend.Slow}
                             }
                         }
                         
                         if entity @s[x_rotation=${move.getData().AscendRotation.Fast[0]}..${move.getData().AscendRotation.Fast[1]}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getData().FlightCost.Ascend.Fast}..
                         function ascend_fast {
-                            if score @s toe.spirit matches 2..
-                            function has_spirit {
-                                set @s->toe.spirit -= 2
+                            unless entity @s[tag=${move.getStatus(status_ascend_fast).getID()}]
+                            function init {
+                                eval move.tagStatus(status_ascend_fast)
                                 eval Wings.setFly()
                                 eval Wings.setFast()
-                                
-                                eval remove_flight_subtags()
-                                tag @s add ${move.getRunTag("ascend_fast")}
+                                effect clear @s minecraft:levitation
                                 effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Ascend.Fast} true
                             }
-                            
-                            if score @s toe.spirit matches ..0
-                            function $descend_slow
+                            function tick {
+                                set @s->${move.getMeter().getObjective()} -= ${move.getData().FlightCost.Ascend.Fast}
+                            }
                         }
-                        
-                        
                         if entity @s[x_rotation=${move.getData().AscendRotation.Slow[0]}..${move.getData().AscendRotation.Slow[1]}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getData().FlightCost.Ascend.Slow}..
                         function ascend_slow {
-                            if score @s toe.spirit matches 1..
-                            function has_spirit {
-                                set @s->toe.spirit -= 1
+                            unless entity @s[tag=${move.getStatus(status_ascend_slow).getID()}]
+                            function init {
+                                eval move.tagStatus(status_ascend_slow)
                                 eval Wings.setFly()
-                                eval Wings.setNormal()
-                                
-                                eval remove_flight_subtags()
-                                tag @s add ${move.getRunTag("ascend_slow")}
+                                eval Wings.setSlow()
+                                effect clear @s minecraft:levitation
                                 effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Ascend.Slow} true
                             }
-                            
-                            if score @s toe.spirit matches ..0
-                            function $descend_slow
+                            function tick {
+                                set @s->${move.getMeter().getObjective()} -= ${move.getData().FlightCost.Ascend.Slow}
+                            }
                         }
-                        
-                        if entity @s[x_rotation=${move.getData().DescendRotation.Slow[0]}..${move.getData().DescendRotation.Slow[1]}]
-                        function $descend_slow
                         
                         if entity @s[x_rotation=${move.getData().DescendRotation.Fast[0]}..${move.getData().DescendRotation.Fast[1]}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getData().FlightCost.Descend.Fast}..
                         function descend_fast {
-                            eval Wings.setDrop()
-                            eval Wings.setSlow()
-                            
-                            eval remove_flight_subtags()
-                            tag @s add ${move.getRunTag("descend_fast")}
-                            effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Fast} true
+                            unless entity @s[tag=${move.getStatus(status_descend_fast).getID()}]
+                            function init {
+                                eval move.tagStatus(status_descend_fast)
+                                eval Wings.setDive()
+                                effect clear @s minecraft:levitation
+                                effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Fast} true
+                            }
+                            function tick {
+                                set @s->${move.getMeter().getObjective()} -= ${move.getData().FlightCost.Descend.Fast}
+                            }
+                        }
+                        if entity @s[x_rotation=${move.getData().DescendRotation.Slow[0]}..${move.getData().DescendRotation.Slow[1]}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getData().FlightCost.Descend.Slow}..
+                        function descend_slow {
+                            unless entity @s[tag=${move.getStatus(status_descend_slow).getID()}]
+                            function init {
+                                eval move.tagStatus(status_descend_slow)
+                                eval Wings.setGlide()
+                                effect clear @s minecraft:levitation
+                                effect give @s minecraft:levitation 999999 ${move.getData().FlightLevitationAmplifier.Descend.Slow} true
+                            }
+                            function tick {
+                                set @s->${move.getMeter().getObjective()} -= ${move.getData().FlightCost.Descend.Slow}
+                            }
                         }
                         
-                        eval Callback.addCallback(Callback.ENUM_PLAYER_LANDED,
-                            function() {
-                                if entity @s[tag=${move.getRunTag("flight")}]
-                                function landed {
-                                    eval windSoundCycle.stop(false)
-                                    eval Wings.setIdle()
-                                    tag @s remove ${move.getRunTag("flight")}
-                                    eval remove_flight_subtags()
-                                    playsound minecraft:entity.player.small_fall player @a ~ ~ ~ 0.5 0.9
-                                    function draw {
-                                        var particle = new Particle("minecraft:campfire_cosy_smoke", 0.2, 0)
-                                        eval new ParticleCycle(36.0, 0.5, 0.0, coordinates<0.0 0.0 0.0>, particle).draw(false, ParticleCycle.CHANCE_ALWAYS)
-                                    }
+                    }
+                    var playerLanded = function(move : Move) {
+                        if entity @s[tag=${move.getStatus(status_clear).getID()}]
+                        function cleanup_levitation {
+                            effect clear @s minecraft:levitation
+                            tag @s remove ${move.getStatus(status_clear).getID()}
+                        }
+                        if entity @s[tag=${move.getTagID()}]
+                        if entity @s[tag=${move.getStatus(status_flight).getID()}]
+                        function player_landed {
+                            eval windSoundCycle.stop(false)
+                            eval Wings.setIdle()
+                            eval move.tagStatus(status_ground)
+                            eval move.clearGroupStatus(group_flight_subtags)
+                            playsound minecraft:entity.player.small_fall player @a ~ ~ ~ 0.5 0.9
+                            function particles {
+                                var particle = new Particle("minecraft:campfire_cosy_smoke", 0.2, 0)
+                                eval new ParticleCycle(36.0, 0.5, 0.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                            }
+                        }
+                    }
+                    eval Callback.addCallback(Callback.ENUM_PLAYER_LANDED, playerLanded , move)
+                    
+                } else if (move.getID().matches(DRAGON_BREATH)) {
+                    var status_charge = "charge"
+                    var status_fire = "fire"
+                    var status_not_enough = "not_enough"
+                    var group_activate = 0
+                    eval move.addStatus(status_charge, group_activate, false, new text_component({"text" : "CHARGING", "color": Color.TEXT_YELLOW, "bold" : true}))
+                    eval move.addStatus(status_fire, group_activate, false, new text_component(
+                            [
+                                {"text" : "|||||", "color": Color.TEXT_RED, "bold" : false},
+                                {"text" : "FIRE", "color": Color.TEXT_RED, "bold" : true},
+                                {"text" : "|||||", "color": Color.TEXT_RED, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_not_enough, group_activate, false, new text_component({"text" : "NOT ENOUGH", "color": Color.TEXT_DARK_RED, "bold" : true,"italic":true}))
+                    
+                    if entity @s[tag=${move.getTagID()}]
+                    function tick {
+                        unless score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        function not_enough {
+                            if entity @s[tag=${move.getStatus(status_charge).getID()}]
+                            function while_charging {
+                            }
+                            if entity @s[tag=${move.getStatus(status_fire).getID()}]
+                            function while_firing {
+                            }
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 0
+                            function tick {
+                                eval move.clearGroupStatus(group_activate)
+                            }
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                            function toggle_attempt {
+                                eval move.tagStatus(status_not_enough)
+                            }
+                            
+                        }
+                        
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 25..
+                        if score @s ${Game.OBJ_COOLDOWN} matches ..0
+                        function shoot {
+                            eval move.tagStatus(status_fire)
+                            set @s->${Game.OBJ_COOLDOWN} += ${move.getData().Cooldown}
+                            set @s->${move.getMeter().getObjective()} -= ${move.getMinimumCost()}
+                            function $f_cast_dragon_breath
+                        }
+                        
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..10
+                        anchored eyes
+                        positioned ^ ^ ^
+                        function charge_smoke {
+                            playsound minecraft:entity.horse.breathe player @a ~ ~ ~ 2 0.8 0
+                            var particle = new Particle("minecraft:cloud", 0.08, 0)
+                            eval new ParticleCycle(20.0, 5.0, 0.0, coordinates<~ ~-1 ~>, particle).draw("xz", true, ParticleCycle.CHANCE_LOW, false)
+                            eval new ParticleCycle(20.0, 4.5, 0.5, coordinates<~ ~-1 ~>, particle).draw("xz", true, ParticleCycle.CHANCE_LOW, false)
+                            eval new ParticleCycle(20.0, 4.0, -1.5, coordinates<~ ~1 ~>, particle).draw("xz", true, ParticleCycle.CHANCE_LOW, false)
+                            eval new ParticleCycle(20.0, 3.0, -3.5, coordinates<~ ~2 ~>, particle).draw("xz", true, ParticleCycle.CHANCE_LOW, false)
+                            eval new ParticleCycle(36.0, 1.0, -5.0, coordinates<~ ~4 ~>, particle).draw("xz", true, ParticleCycle.CHANCE_LOW, false)
+                        }
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..20 
+                        function charge_anchored_smoke {
+                            eval move.tagStatus(status_charge)
+                            anchored eyes  particle minecraft:large_smoke ^0.3 ^ ^-0.1 0 0.1 0 1.0 0 normal
+                            anchored eyes  particle minecraft:large_smoke ^-0.3 ^ ^-0.1 0 0.1 0 1.0 0 normal
+                            anchored eyes  particle minecraft:flame ^0.3 ^ ^-0.1 0 0.1 0 1.0 0 normal
+                            anchored eyes  particle minecraft:flame ^-0.3 ^ ^-0.1 0 0.1 0 1.0 0 normal
+                            
+                        }
+                        
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 0
+                        function idle_smoke {
+                            eval move.clearGroupStatus(group_activate)
+                            anchored eyes 
+                            particle minecraft:smoke ^0.3 ^ ^-0.1 0 0 0 0 0 normal
+                            anchored eyes 
+                            particle minecraft:smoke ^-0.3 ^ ^-0.1 0 0 0 0 0 normal
+                        }
+                    }
+                } else if (move.getID().matches(DRAGON_PUNCH)) {
+                    var status_on = "on"
+                    var status_off = "off"
+                    var status_not_enough = "not_enough"
+                    var status_recharge = "recharge"
+                    var group_toggle = 0
+                    var group_recharge = 1
+                    eval move.addStatus(status_on, group_toggle, true, new text_component({"text" : "ACTIVATED", "color": Color.TEXT_GOLD, "bold" : true}))
+                    eval move.addStatus(status_off, group_toggle, true, new text_component({"text" : "DEACTIVATED", "color": Color.TEXT_DARK_RED, "bold" : true}))
+                    eval move.addStatus(status_not_enough, group_toggle, true, new text_component({"text" : "NOT ENOUGH", "color": Color.TEXT_DARK_RED, "bold" : true,"italic":true}))
+                    eval move.addStatus(status_recharge, group_recharge, false, new text_component({"text" : "RECHARGING", "color": Color.TEXT_YELLOW, "bold" : true,"italic":false}))
+                    
+                    if entity @s[tag=${move.getTagID()}]
+                    function tick {
+                        unless entity @s[tag=${move.getStatus(status_on).getID()}]
+                        unless entity @s[tag=${move.getStatus(status_off).getID()}]
+                        function init {
+                            eval move.tagStatus(status_off)
+                        }
+                        
+                        unless score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        function not_enough {
+                            if entity @s[tag=${move.getStatus(status_on).getID()}]
+                            function while_on {
+                                playsound minecraft:block.fire.extinguish player @a ~ ~ ~ 0.5 1.1
+                                item modify entity @s weapon.mainhand ${itmmod_remove_knockback.getResource()}
+                                effect clear @s minecraft:speed
+                                effect clear @s minecraft:jump_boost
+                                eval flamingSoundCycle.stop(true)
+                            }
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 0
+                            function tick {
+                                eval move.tagStatus(status_off)
+                            }
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                            function toggle_attempt {
+                                eval move.tagStatus(status_not_enough)
+                            }
+                            
+                        }
+                        function recharge {
+                            if score @s ${Game.OBJ_COOLDOWN} matches 1..
+                            if entity @s[tag=${move.getStatus(status_on).getID()}]
+                            function while_on {
+                                effect clear @s minecraft:speed
+                                effect clear @s minecraft:jump_boost
+                                item modify entity @s weapon.mainhand ${itmmod_remove_knockback.getResource()}
+                                eval flamingSoundCycle.stop(true)
+                            }
+                            if score @s ${Game.OBJ_COOLDOWN} matches 1..
+                            function tick {
+                                eval move.tagStatus(status_off)
+                                eval move.tagStatus(status_recharge)
+                            }
+                            if score @s ${Game.OBJ_COOLDOWN} matches 0
+                            function finish {
+                                eval move.clearGroupStatus(group_recharge)
+                            }
+                            
+                        }
+                        
+                        unless entity @s[tag=${move.getStatus(status_on).getID()}]
+                        if entity @s[tag=${move.getStatus(status_off).getID()}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1
+                        if score @s ${Game.OBJ_COOLDOWN} matches 0
+                        function activate {
+                            set ${Callback.PTR_PLAYER_SNEAK_PRESSED} += 1
+                            eval move.tagStatus(status_on)
+                            
+                            item modify entity @s weapon.mainhand ${itmmod_add_knockback.getResource()}
+                            item modify entity @s weapon.mainhand ${itmmod_add_knockback.getResource()}
+                            
+                            eval flamingSoundCycle.play(true)
+                            
+                            playsound minecraft:entity.ender_dragon.shoot player @a ~ ~ ~ 0.5 1.1
+                            function particles {
+                                var particle = new Particle("minecraft:lava", 0.01, 0)
+                                eval new ParticleCycle(20.0, 1.0, 20.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                                var particle = new Particle("minecraft:flame", 0.01, 0)
+                                eval new ParticleCycle(20.0, 1.0, 20.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                            }
+                        }
+                        
+                        if entity @s[tag=${move.getStatus(status_on).getID()}]
+                        unless entity @s[tag=${move.getStatus(status_off).getID()}]
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1
+                        function deactivate {
+                            eval flamingSoundCycle.stop(true)
+                            eval move.tagStatus(status_off)
+                            effect clear @s minecraft:speed
+                            effect clear @s minecraft:jump_boost
+                            item modify entity @s weapon.mainhand ${itmmod_remove_knockback.getResource()}
+                            playsound minecraft:block.fire.extinguish player @a ~ ~ ~ 0.5 1.1
+                        }
+                        
+                        if entity @s[tag=${move.getStatus(status_on).getID()}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        function active_tick {
+                            effect give @s minecraft:speed 999999 ${move.getData().Amplifiers.Speed} true
+                            effect give @s minecraft:jump_boost 999999 ${move.getData().Amplifiers.JumpBoost} true
+                            anchored eyes 
+                            particle minecraft:dust_color_transition 1.0 0.75 0.0 2.0 1.0 0.1 0.0 ^-0.3 ^-0.30 ^0.8 0 0 0 0 0 normal @a
+                            anchored eyes 
+                            particle minecraft:flame ^-0.3 ^-0.30 ^0.8 0 0 0 0.01 1 normal @a
+                            
+                            if score @s ${Game.OBJ_FALL_DISTANCE} matches 1..
+                            function player_falling {
+                                item modify entity @s weapon.mainhand ${itmmod_add_knockback_with_fall.getResource()}
+                                particle minecraft:poof ~ ~0.75 ~ 0.25 0.25 0.25 0.01 3 normal @a
+                                particle minecraft:electric_spark ~ ~0.75 ~ 0.25 0.25 0.25 0.01 5 normal @a
+                            }
+                        }
+                        
+                        var playerLanded = function(move : Move) {
+                            if entity @s[tag=${move.getTagID()}]
+                            function player_landed {
+                                if entity @s[tag=${move.getStatus(status_on).getID()}]
+                                if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                                function modify {
+                                    item modify entity @s weapon.mainhand ${itmmod_add_knockback.getResource()}
+                                    item modify entity @s weapon.mainhand ${itmmod_add_knockback.getResource()}
                                 }
                             }
-                        )
+                        }
+                        
+                        eval Callback.addCallback(Callback.ENUM_PLAYER_LANDED, playerLanded , move)
                     }
-                } else if (move.getID().matches(DRAGON_BREATH)) {
                     
+                } else if (move.getID().matches(DRAGON_FORM)) {
+                    var status_on = "on"
+                    var status_off = "off"
+                    var status_not_enough = "not_enough"
+                    var group_toggle = 0
+                    eval move.addStatus(status_on, group_toggle, false, new text_component(
+                            [
+                                {"text" : "|||||", "color": Color.TEXT_DARK_RED, "bold" : false},
+                                {"text" : "FORM", "color": Color.TEXT_DARK_RED, "bold" : true},
+                                {"text" : "|||||", "color": Color.TEXT_DARK_RED, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_off, group_toggle, false, new text_component(
+                            [
+                                {"text" : "", "color": Color.TEXT_DARK_GRAY, "bold" : false},
+                                {"text" : "NORM", "color": Color.TEXT_DARK_GRAY, "bold" : true},
+                                {"text" : "", "color": Color.TEXT_DARK_GRAY, "bold" : false}
+                            ]
+                        ))
+                    eval move.addStatus(status_not_enough, group_toggle, false, new text_component({"text" : "NOT ENOUGH", "color": Color.TEXT_DARK_RED, "bold" : true,"italic":true}))
+                    
+                    
+                    
+                    if entity @s[tag=${move.getTagID()}]
+                    function tick {
+                        unless entity @s[tag=${move.getStatus(status_on).getID()}]
+                        unless entity @s[tag=${move.getStatus(status_off).getID()}]
+                        function init {
+                            eval Wings.setIdle()
+                            eval move.tagStatus(status_off)
+                        }
+                        
+                        unless score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        function not_enough {
+                            
+                            if entity @s[tag=${move.getStatus(status_on).getID()}]
+                            function while_on {
+                                eval Wings.setIdle()
+                                playsound minecraft:entity.ender_dragon.flap player @a ~ ~ ~ 1.0 1.0
+                                effect clear @s minecraft:speed
+                                effect clear @s minecraft:jump_boost
+                                effect clear @s minecraft:strength
+                            }
+                            
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 0
+                            function tick {
+                                eval move.tagStatus(status_off)
+                            }
+                            
+                            if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1..
+                            function toggle_attempt {
+                                eval move.tagStatus(status_not_enough)
+                            }
+                            
+                        }
+                        
+                        unless entity @s[tag=${move.getStatus(status_on).getID()}]
+                        if entity @s[tag=${move.getStatus(status_off).getID()}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1
+                        function activate {
+                            eval Wings.setGlide()
+                            
+                            set ${Callback.PTR_PLAYER_SNEAK_PRESSED} += 1
+                            eval move.tagStatus(status_on)
+                            playsound minecraft:entity.ender_dragon.growl player @a ~ ~ ~ 5.0 1.2
+                            function particles {
+                                var particle = new Particle("minecraft:lava", 0.01, 0)
+                                eval new ParticleCycle(20.0, 1.0, 20.0, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, false)
+                            }
+                        }
+                        
+                        if entity @s[tag=${move.getStatus(status_on).getID()}]
+                        unless entity @s[tag=${move.getStatus(status_off).getID()}]
+                        if score ${Callback.PTR_PLAYER_SNEAK_PRESSED.target} ${Callback.PTR_PLAYER_SNEAK_PRESSED.member} matches 1
+                        function deactivate {
+                            eval Wings.setIdle()
+                            eval move.tagStatus(status_off)
+                            playsound minecraft:entity.ender_dragon.flap player @a ~ ~ ~ 1.0 1.0
+                            effect clear @s minecraft:speed
+                            effect clear @s minecraft:jump_boost
+                            effect clear @s minecraft:strength
+                        }
+                        
+                        if entity @s[tag=${move.getStatus(status_on).getID()}]
+                        if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                        function active_tick {
+                            eval wgs_dragon_lord.animate()
+                            set @s->${move.getMeter().getObjective()} -= ${move.getMinimumCost()}
+                            effect give @s minecraft:speed 999999 ${move.getData().Amplifiers.Speed} true
+                            effect give @s minecraft:jump_boost 999999 ${move.getData().Amplifiers.JumpBoost} true
+                            effect give @s minecraft:strength 999999 ${move.getData().Amplifiers.Strength} true
+                            function particles {
+                                particle minecraft:dust_color_transition 1.0 0.5 0.2 0.75 0.8 0.3 0.0 ~ ~0.75 ~ 0.1 0.25 0.1 0 2 force
+                                particle minecraft:dust_color_transition 1.0 1.0 0.2 0.75 0.8 0.3 0.0 ~ ~0.75 ~ 0.1 0.25 0.1 0 2 force
+                                particle minecraft:dust_color_transition 1.0 0.2 0.2 0.75 0.8 0.3 0.0 ~ ~0.75 ~ 0.1 0.25 0.1 0 2 force
+                                var particle = new Particle("minecraft:flame", 0.1, 0, "normal")
+                                eval new ParticleCycle(18.0, 1.5, 0.5, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_NORMAL, true)
+                                eval new ParticleCycle(18.0, -1.5, 0.5, coordinates<~ ~ ~>, particle).draw("xz", false, ParticleCycle.CHANCE_NORMAL, true)
+                                var particle = new Particle("minecraft:large_smoke", 0.1, 0, "normal")
+                                eval new ParticleCycle(20.0, 0.8, 0.01, coordinates<~ ~0.01 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, true)
+                                eval new ParticleCycle(20.0, -0.8, 0.01, coordinates<~ ~0.01 ~>, particle).draw("xz", false, ParticleCycle.CHANCE_ALWAYS, true)
+                                
+                                # var particle = new Particle("minecraft:dust_color_transition", 0.01, 0, "normal")
+                                # eval particle.setFirstColor(1.0, 0.3, 0.0)
+                                # eval particle.setSize(2.0)
+                                # eval particle.setSecondColor(0.5, 0.1, 0.0)
+                                # eval new ParticleCycle(20.0, 2.0, 20.0, coordinates<^ ^ ^2.0>, particle).draw("xy", false, ParticleCycle.CHANCE_ALWAYS, true)
+                            }
+                        }
+                        if entity @s[tag=${move.getStatus(status_off).getID()}]
+                        function inactive_tick {
+                            if score @s ${move.getMeter().getObjective()} matches ${move.getMinimumCost()}..
+                            function particles {
+                                particle minecraft:dust_color_transition 1.0 0.2 0.0 1.0 0.3 0.0 0.0 ~ ~0.01 ~ 0.15 0.0 0.15 0 5 force
+                                particle minecraft:large_smoke ~ ~0.01 ~ 0.15 0.0 0.15 0 1 force
+                            }
+                        }
+                        
+                    }
+                    
+                }
+                
+                if entity @s[tag=${move.getTagID()}]
+                function actionbar {
+                    eval move.displayActionBar()
                 }
             }
         }
     }
     
 }
+
+# === Dragon Flight ===
+#
+#
+global var mve_dragon_flight = new Move(Move.DRAGON_FLIGHT, meter_spirit)
+eval mve_dragon_flight.setDisplayName(
+    new text_component({
+        "text" : "Dragon Flight",
+        "color" : Color.TEXT_RED,
+        "bold" : true,
+        "underlined" : true
+    })
+)
+
+eval mve_dragon_flight.setMinimumCost(1)
+eval mve_dragon_flight.setData(
+    {
+        ChargeJumpBoostAmplifier: {
+            Charge0: 3,
+            Charge1: 8,
+            Charge2: 20
+        },
+        CostChargeMultipliers: {
+            Base: 10,
+            Charge0: 1.0,
+            Charge1: 2.5,
+            Charge2: 5.0
+        },
+        AscendRotation: {
+            Fast: [-90.0, -20.0],
+            Slow: [-20.0, 5.0]
+        },
+        DescendRotation: {
+            Fast: [50.0, 90.0],
+            Slow: [5.0, 50.0]
+        },
+        FlightLevitationAmplifier: {
+            Ascend: {
+                Fast: 5,
+                Slow: 2
+            },
+            Descend: {
+                Fast: 245,
+                Slow: 253
+            }
+        },
+        FlightCost: {
+            Ascend: {
+                Fast: 2,
+                Slow: 1
+            },
+            Descend: {
+                Fast: 0,
+                Slow: 0
+            }
+        }
+    }
+)
+
+# === Dragon Breath ===
+#
+#
+
+global var mve_dragon_breath = new Move(Move.DRAGON_BREATH, meter_spirit)
+eval mve_dragon_breath.setDisplayName(
+    new text_component({
+        "text" : "Dragon Breath",
+        "color" : Color.TEXT_GOLD,
+        "bold" : true,
+        "underlined" : true
+    })
+)
+eval mve_dragon_breath.setMinimumCost(25)
+eval mve_dragon_breath.setData({
+        Cooldown: 3
+    })
+
+# === Dragon Punch ===
+#
+#
+global var mve_dragon_punch = new Move(Move.DRAGON_PUNCH, meter_spirit)
+eval mve_dragon_punch.setDisplayName(
+    new text_component({
+        "text" : "Dragon Punch",
+        "color" : Color.TEXT_RED,
+        "bold" : true,
+        "underlined" : true
+    })
+)
+eval mve_dragon_punch.setData(
+    {
+        Amplifiers: {
+            Speed: 0,
+            JumpBoost: 0
+        }
+    }
+)
+eval mve_dragon_punch.setMinimumCost(250)
+eval mve_dragon_punch.setItem(itm_dragon_punch_fist)
+
+# === Dragon Form ===
+#
+#
+global var mve_dragon_form = new Move(Move.DRAGON_FORM, meter_spirit)
+eval mve_dragon_form.setDisplayName(
+    new text_component({
+        "text" : "Dragon Form",
+        "color" : Color.TEXT_DARK_RED,
+        "bold" : true,
+        "underlined" : true
+    })
+)
+eval mve_dragon_form.setMinimumCost(2)
+eval mve_dragon_form.setData(
+    {
+        Amplifiers: {
+            Speed: 5,
+            JumpBoost: 3,
+            Strength: 2
+        }
+    }
+)

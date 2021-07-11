@@ -1,0 +1,104 @@
+@on compile
+@priority 0.0
+
+var resource = adv_hurt_using_dragon_fist
+
+var reward = function() : resource {
+    define function reward {
+        var found_target_tag = "toe.raycast.found_target"
+        var fist_coords = coordinates<^-0.125 ^-0.10 ^0.2>
+        
+        set @s->${Game.OBJ_METER_SPIRIT} -= ${mve_dragon_punch.getMinimumCost()}
+        
+        at @s anchored eyes
+        if score @s ${Game.OBJ_FALL_DISTANCE} matches 0
+        function normal {
+            particle minecraft:dust_color_transition 1.0 0.5 0.2 2.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 2 force
+            particle minecraft:dust_color_transition 1.0 1.0 0.2 2.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 2 force
+            particle minecraft:dust_color_transition 1.0 0.2 0.2 2.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 2 force
+            playsound minecraft:entity.generic.explode player @a $fist_coords 0.7 1.2
+            particle minecraft:explosion $fist_coords 0.0 0.0 0.0 0 1 normal
+            playsound minecraft:entity.player.breath player @a $fist_coords 1.0 0.9
+            set @s->${Game.OBJ_COOLDOWN} += 80
+        }
+        if score @s ${Game.OBJ_FALL_DISTANCE} matches 1..
+        function crit {
+            particle minecraft:flash $fist_coords 0.0 0.0 0.0 0 1 normal
+            particle minecraft:dust_color_transition 1.0 0.5 0.2 4.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 5 force
+            particle minecraft:dust_color_transition 1.0 1.0 0.2 4.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 5 force
+            particle minecraft:dust_color_transition 1.0 0.2 0.2 4.0 0.5 0.1 0.0 $fist_coords 1 1 1 0 5 force
+            playsound minecraft:entity.generic.explode player @a $fist_coords 1.0 1.0
+            particle minecraft:explosion_emitter $fist_coords 0.0 0.0 0.0 0 1 normal
+            playsound minecraft:entity.player.breath player @a $fist_coords 2.0 0.7
+            set @s->${Game.OBJ_COOLDOWN} += 150
+        }
+        
+        as @s at @s
+        anchored eyes
+        positioned ^ ^ ^
+        function raycast {
+            
+            if entity @e[type=#toe:mobs,distance=0..1.5,predicate=${pre_entity_is_hurt.getResource()}]
+            tag @s add $found_target_tag
+            
+            if entity @s[tag=$found_target_tag]
+            function as_this {
+                
+            }
+            
+            if entity @s[tag=$found_target_tag]
+            as @e[type=#toe:mobs,distance=0..1.5,predicate=${pre_entity_is_hurt.getResource()}]
+            function as_target {
+                tag @s add ${Game.TAG_FIERY_LAUNCH}
+                set @s->${Game.OBJ_BURN} += 20
+            }
+            
+            
+            if entity @s[distance=0..6.0]
+            unless entity @s[tag=$found_target_tag]
+            positioned ^ ^ ^0.1
+            function /
+        }
+        
+        tag @s remove $found_target_tag
+        advancement revoke @s only ${resource.getResource()}
+        return resource</>
+    }
+}
+eval File.out.writeData(
+    resource.getTridentDirectory() ,
+    JSON.stringify(
+        {
+            "criteria": {
+                "hurt_using_dragon_fist": {
+                    "trigger": "minecraft:player_hurt_entity",
+                    "conditions": {
+                        "player": [
+                            {
+                                "condition": "minecraft:entity_properties",
+                                "entity": "this",
+                                "predicate": {
+                                    "nbt": "{Tags:[" + mve_dragon_punch.getStatus("on").getID() + "]}",
+                                    "equipment": {
+                                        "mainhand": {
+                                            "items": [
+                                                itm_dragon_punch_fist.baseType
+                                            ],
+                                            "nbt": itm_dragon_punch_fist.getMatchingNBT()
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            },             
+            "rewards": {
+                "function": reward()
+            }
+        },
+        true
+    )
+)
+
+# mve_dragon_punch.getStatus("on").getID() + 

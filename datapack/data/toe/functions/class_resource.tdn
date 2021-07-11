@@ -37,11 +37,20 @@ define class Resource {
     public new(resource : resource, type : int) {
         var str = (string) resource
         eval this.namespace = str.substring(0, str.indexOf(':'))
-        eval this.directory = str.substring(str.indexOf(':') + 1, str.lastIndexOf('/'))
-        eval this.title = str.substring(str.lastIndexOf('/') + 1, str.length)
+        if (str.lastIndexOf('/') != -1) {
+            eval this.directory = str.substring(str.indexOf(':') + 1, str.lastIndexOf('/'))
+            eval this.title = str.substring(str.lastIndexOf('/') + 1, str.length)
+        } else {
+            eval this.directory = ""
+            eval this.title = str.substring(str.lastIndexOf(':') + 1, str.length)
+        }
         eval this.type = type
         
-        eval this.resource = resource
+        if (this.directory.matches("")) {
+            eval this.resource = new resource(this.namespace + ":" + title)
+        } else {
+            eval this.resource = new resource(this.namespace + ":" + this.directory + "/" + title)
+        }
     }
     
     public new(namespace : string, directory : string, title : string, type : int) {
@@ -50,7 +59,11 @@ define class Resource {
         eval this.title = title
         eval this.type = type
         
-        eval this.resource = new resource(this.namespace + ":" + this.directory + "/" + title)
+        if (this.directory.matches("")) {
+            eval this.resource = new resource(this.namespace + ":" + title)
+        } else {
+            eval this.resource = new resource(this.namespace + ":" + this.directory + "/" + title)
+        }
     }
     
     public getResource() : resource {
@@ -81,11 +94,27 @@ for (var i = 0; i < Game.MAX_HOTBAR_SLOTS; i ++) {
     eval is_slot_selected_predicates.add(resource)
 }
 
+# Predicates
+#
+#
+global var pre_entity_is_hurt = new Resource(resource<toe:entity/is_hurt>, Resource.ENUM_PREDICATE)
+global var pre_on_ground = new Resource(resource<toe:entities/on_ground>, Resource.ENUM_PREDICATE)
 # Callback
-global var pre_player_on_ground = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
-
 # Particle
 global var pre_particlecycle_chance_low = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
 global var pre_particlecycle_chance_normal = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
 global var pre_particlecycle_chance_high = new Resource(resource<toe:entities/player/on_ground>, Resource.ENUM_PREDICATE)
+
+# Item Modifier
+#
+#
+global var itmmod_add_knockback = new Resource(resource<toe:enchant/add_knockback>, Resource.ENUM_ITEM_MODIFIER)
+global var itmmod_remove_knockback = new Resource(resource<toe:enchant/remove_knockback>, Resource.ENUM_ITEM_MODIFIER)
+global var itmmod_add_knockback_with_fall = new Resource(resource<toe:enchant/add_knockback_with_fall>, Resource.ENUM_ITEM_MODIFIER)
+
+# Advancements
+#
+#
+global var adv_hurt_using_dragon_fist = new Resource(resource<toe:dragon_lord/hurt_using_dragon_fist>, Resource.ENUM_ADVANCEMENT)
+global var adv_inventory_changed = new Resource(resource<toe:inventory_changed>, Resource.ENUM_ADVANCEMENT)
 

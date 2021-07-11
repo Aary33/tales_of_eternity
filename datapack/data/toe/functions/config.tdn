@@ -9,82 +9,12 @@ global var BASE_MOVEMENT_SPEED = 0.150 # Player's base speed
 # global var MODIFIER_UUID = uuid<8-0-7-1-6>
 # global var MOMENTUM_STOP_DISTANCE = coordinates<^ ^ ^>.deriveMagnitude(0, Axis.X).deriveMagnitude(0, Axis.Y).deriveMagnitude(0.5, Axis.Z)
 
-global var bb_spirit = new BossbarFamily("spirit")
-eval bb_spirit.setDisplayName(
-    new text_component({
-        "text" : "Spirit",
-        "color" : Color.RED,
-        "bold" : true
-    })
-)
-eval bb_spirit.setColor(Color.RED)
-eval bb_spirit.setStyle(Style.NOTCHED_10)
-eval bb_spirit.setObjective("toe.spirit")
 
 # Wings
 global var wgs_dragon_lord = new Wings("dragon_lord")
 
 # Move Indexes
-global var mve_dragon_flight = new Move(Move.DRAGON_FLIGHT)
-eval mve_dragon_flight.setDisplayName(
-    new text_component({
-        "text" : "Dragon Lord",
-        "color" : Color.RED,
-        "bold" : false
-    })
-)
-eval mve_dragon_flight.setSpiritCost(20)
-eval mve_dragon_flight.addRunTagsByName([
-        "charge_-1",
-        "charge_0",
-        "charge_1",
-        "charge_2",
-        "launch",
-        "flight",
-        "ascend_fast",
-        "ascend_slow",
-        "descend_fast",
-        "descend_slow"
-    ]
-)
-eval mve_dragon_flight.setData(
-    {
-        ChargeJumpBoostAmplifier: {
-            Charge0: 3,
-            Charge1: 8,
-            Charge2: 20
-        },
-        ChargeSpiritCost: {
-            Charge0: 10,
-            Charge1: 25,
-            Charge2: 50
-        },
-        AscendRotation: {
-            Fast: [-90.0, -20.0],
-            Slow: [-20.0, 5.0]
-        },
-        DescendRotation: {
-            Fast: [50.0, 90.0],
-            Slow: [5.0, 50.0]
-        },
-        FlightLevitationAmplifier: {
-            Ascend: {
-                Fast: 5,
-                Slow: 2
-            },
-            Descend: {
-                Fast: 245,
-                Slow: 253
-            }
-        },
-        FlightSpiritCost: 2,
-        GlideSpiritCost: 1
-    }
-)
 
-global var MOVES = [
-    mve_dragon_flight
-]
 
 # global var MOVES_CONFIG = {
 #     dragon_flight: {
@@ -160,19 +90,7 @@ global var MOVES = [
 
 
 
-global var pwr_dragon_lord = new Power(Power.DRAGON_LORD)
-eval pwr_dragon_lord.setDisplayName(
-    new text_component({
-        "text" : "Dragon Lord",
-        "color" : Color.RED,
-        "bold" : false
-    })
-)
-eval pwr_dragon_lord.addMoves([mve_dragon_flight])
 
-global var POWERS = [
-    pwr_dragon_lord
-]
 
 # Character Config
 # global var POWERS_CONFIG = {

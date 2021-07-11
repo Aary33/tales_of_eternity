@@ -1,17 +1,171 @@
 @on compile
 @priority 2.0
 
+define entity ent_dropped_item minecraft:item {
+    default nbt {
+        Tags:[new],
+        Item: {
+            id:"minecraft:stone",
+            Count:1b
+        },
+        Age: 0s,
+        PickupDelay: 5s
+    }
+    function birth {
+        tag @s remove new
+    }
+    
+    function death {
+        kill @s
+    }
+    
+    ticking function tick {
+        var deathTime = 6000
+        set @s->${Game.OBJ_AGE} += 1
+        if score @s ${Game.OBJ_AGE} matches 1
+        function ${this.birth}
+        if score @s ${Game.OBJ_AGE} matches $deathTime..
+        function ${this.death}
+    }
+}
 
+define entity ent_burn minecraft:small_fireball {
+    default nbt {
+        Tags:[new],
+        Motion:[0.0,-10.0,0.0],
+        CustomName: "{ \"text\" : \"Dragon Breath\", \"color\" : \"gold\" }"
+    }
+    function birth {
+        tag @s remove new
+    }
+    
+    function death {
+        kill @s
+    }
+    
+    ticking function tick {
+        var deathTime = 3
+        set @s->${Game.OBJ_AGE} += 1
+        if score @s ${Game.OBJ_AGE} matches 1
+        function ${this.birth}
+        if score @s ${Game.OBJ_AGE} matches $deathTime..
+        function ${this.death}
+    }
+}
+
+define entity ent_dragon_breath minecraft:marker {
+    default nbt {
+        Tags:[new]
+    }
+    
+    function birth {
+        tag @s remove new
+    }
+    
+    function death {
+        kill @s
+    }
+    function collide_with_block {
+        playsound minecraft:entity.generic.explode player @a ~ ~ ~ 1.0 1.05
+        particle minecraft:explosion ~ ~ ~ 0.0 0.0 0.0 0 1 normal
+        particle minecraft:lava ~ ~ ~ 1.0 1.0 1.0 1 5 normal
+        particle minecraft:dust_color_transition 1.0 0.5 0.2 5.0 0.5 0.1 0.0 ~ ~ ~ 1 1 1 0 10 force
+        particle minecraft:dust_color_transition 1.0 1.0 0.2 5.0 0.5 0.1 0.0 ~ ~ ~ 1 1 1 0 10 force
+        particle minecraft:dust_color_transition 1.0 0.2 0.2 5.0 0.5 0.1 0.0 ~ ~ ~ 1 1 1 0 10 force
+        function ${this.death}
+    }
+    
+    ticking function tick {
+        var deathTime = 30
+        set @s->${Game.OBJ_AGE} += 1
+        if score @s ${Game.OBJ_AGE} matches 1
+        function ${this.birth}
+        if score @s ${Game.OBJ_AGE} matches $deathTime..
+        function ${this.death}
+        
+        
+        teleport @s ^ ^ ^0.75 ~ ~
+        
+        define function draw_fiery_spiral {
+            global var f_draw_fiery_spiral = resource</>
+            function particles {
+                particle minecraft:dust_color_transition 1.0 0.2 0.1 3.0 0.3 0.1 0.0 ~ ~ ~ 0 0 0 0 1 force
+                
+                var particle_flame = new Particle("minecraft:flame", 0, 0, "normal")
+                var particle = new Particle("minecraft:dust_color_transition", 0, 0, "normal")
+                eval particle.setFirstColor(1.0, 1.0, 0.2)
+                eval particle.setSize(4.0)
+                eval particle.setSecondColor(0.3, 0.1, 0.0)
+                eval new ParticleCycle(18.0, 0.75, 0.0, coordinates<^ ^ ^>, particle).draw("xy", false, ParticleCycle.CHANCE_ALWAYS, true)
+                eval new ParticleCycle(18.0, 0.75, 0.0, coordinates<^ ^ ^>, particle_flame).draw("xy", false, ParticleCycle.CHANCE_ALWAYS, true)
+                
+                var particle = new Particle("minecraft:dust_color_transition", 0, 0, "normal")
+                eval particle.setFirstColor(1.0, 0.5, 0.2)
+                eval particle.setSize(4.0)
+                eval particle.setSecondColor(0.3, 0.1, 0.0)
+                eval new ParticleCycle(18.0, -0.75, 0.0, coordinates<^1.0 ^ ^>, particle).draw("xy", false, ParticleCycle.CHANCE_ALWAYS, true)
+                eval new ParticleCycle(18.0, -0.75, 0.0, coordinates<^1.0 ^ ^>, particle_flame).draw("xy", false, ParticleCycle.CHANCE_ALWAYS, true)
+            }
+        }
+        anchored eyes
+        positioned ^ ^ ^
+        function $f_draw_fiery_spiral
+        
+        unless block ~ ~ ~ #toe:air_blocks
+        function ${this.collide_with_block}
+        
+        var self = entity<@e[type=${this},distance=0..0.001,limit=1,sort=nearest]>
+        at @s
+        as @e[type=#toe:mobs,distance=0..2]
+        unless score @s ${Game.OBJ_UUID_LIST[0]} = $self ${Game.OBJ_OWNER_UUID_LIST[0]}
+        unless score @s ${Game.OBJ_UUID_LIST[1]} = $self ${Game.OBJ_OWNER_UUID_LIST[1]}
+        unless score @s ${Game.OBJ_UUID_LIST[2]} = $self ${Game.OBJ_OWNER_UUID_LIST[2]}
+        unless score @s ${Game.OBJ_UUID_LIST[3]} = $self ${Game.OBJ_OWNER_UUID_LIST[3]}
+        set @s->${Game.OBJ_BURN} += 10 
+        
+    }
+}
+
+define function cast_dragon_breath {
+    global var f_cast_dragon_breath = resource</>
+    var entity = entity<@e[type=$ent_dragon_breath, limit=1, distance=0..0.01, sort=nearest]>
+    
+    at @s
+    anchored eyes
+    positioned ^ ^ ^
+    function shoot {
+        playsound minecraft:entity.blaze.shoot player @a ~ ~ ~ 0.3 0.9
+        particle minecraft:lava ^ ^ ^1.5 0.3 0.3 0.3 0 10 normal
+        particle minecraft:large_smoke ^ ^ ^1.5 0.3 0.3 0.3 0.05 20 normal
+        
+        summon $ent_dragon_breath ^ ^ ^
+        
+        eval Game.setOwner(entity<$entity[tag=new]>, entity<@s>)
+        
+        as $entity[tag=new]
+        teleport $entity[tag=new] ^ ^ ^1.5 ~ ~
+    }
+    
+}
 define function player {
     @tag tick
-    
     as @a at @s function this {
-        set @s->toe.age += 1
+        set @s->${Game.OBJ_AGE} += 1
         
+        unless score @s ${Game.OBJ_COOLDOWN} matches ..0
+        set @s->${Game.OBJ_COOLDOWN} -= 1
+        
+        
+        for (var i = 0; i < Game.OBJ_UUID_LIST.length; i++) {
+            unless score @s ${Game.OBJ_UUID_LIST[i]} matches ${Integer.MIN_VALUE}..${Integer.MAX_VALUE}
+            store result score @s ${Game.OBJ_UUID_LIST[i]} data get entity @s UUID[$i]
+        }
             
+        eval Move.run()
+        eval Power.toggle()
+        eval Power.run()
+        eval Callback.run(Callback.LOCAL)
         
-        eval Move.run(MOVES)
-        eval Power.run(POWERS)
         
     }
 }

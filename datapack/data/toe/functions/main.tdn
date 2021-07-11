@@ -41,38 +41,46 @@ var initializePointers = function() {
     set ${Game.PTR_TMP} = 0
 }
 
-define function 1s {
-    global var f_1s = resource</>
-    schedule function / 1s replace
-}
-define function 10t {
-    global var f_10t = resource</>
-    eval Wings.slow()
-    schedule function / 10t replace
-}
-define function 4t {
-    global var f_4t = resource</>
-    eval Wings.normal()
-    schedule function / 4t replace
-}
-define function 2t {
-    global var f_2t = resource</>
-    eval Wings.fast()
-    schedule function / 2t replace
-}
 
 define function tick {
     @tag tick
-    eval Callback.run()
+    eval Game.run()
+    eval Callback.run(Callback.GLOBAL)
     eval BossbarFamily.track()
 }
 
 define function init {
     @tag load
-    schedule function $f_1s 1s replace
-    schedule function $f_2t 2t replace
-    schedule function $f_4t 4t replace
-    schedule function $f_10t 10t replace
+    
+    function schedule {
+        var time = 2
+        /${"schedule function " + function {
+                eval Wings.fast()
+                /${"schedule function " + resource</> + " " + time + "t replace"}
+            } + " " + time + "t replace"}
+        eval time = 4
+        /${"schedule function " + function {
+                eval Wings.normal()
+                /${"schedule function " + resource</> + " " + time + "t replace"}
+            } + " " + time + "t replace"}
+        eval time = 10
+        /${"schedule function " + function {
+                eval Wings.slow()
+                /${"schedule function " + resource</> + " " + time + "t replace"}
+            } + " " + time + "t replace"}
+        eval time = 20
+        /${"schedule function " + function {
+                /${"schedule function " + resource</> + " " + time + "t replace"}
+            } + " " + time + "t replace"}
+        eval time = 40
+        /${"schedule function " + function {
+                as @e[type=#toe:mobs,scores={${Game.OBJ_BURN}=1..}]
+                at @s positioned ~ ~3 ~
+                summon $ent_burn
+                /${"schedule function " + resource</> + " " + time + "t replace"}
+            } + " " + time + "t replace"}
+    }
+    
     
     eval SoundCycle.load()
     
